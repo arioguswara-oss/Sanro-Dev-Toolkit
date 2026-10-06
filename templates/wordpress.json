@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "project": "WordPress Project",
+  "projectType": "wordpress",
+  "minimumNodeMajor": null,
+  "requiredTools": ["git", "rg"],
+  "optionalTools": ["php", "node", "npm", "fd", "ast-grep"],
+  "dependencyCommands": [],
+  "fullTest": null,
+  "focusedTest": null,
+  "security": {
+    "includeSecretsInRecoveryArchive": false
+  }
+}

@@ -1,0 +1,26 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Dependency/build output
+node_modules/
+dist/
+build/
+coverage/
+
+# Recovery archives
+*.zip
+SANRO-Recovery/
+
+# Secrets / credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+credentials*.json
+secrets*.json

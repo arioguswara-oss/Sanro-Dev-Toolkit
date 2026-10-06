@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "project": "SANRO Superadmin",
+  "projectType": "node",
+  "minimumNodeMajor": 20,
+  "requiredTools": ["git", "node", "npm", "rg"],
+  "optionalTools": ["fd", "ast-grep"],
+  "dependencyCommands": [
+    {
+      "name": "backend npm ci",
+      "workingDirectory": "backend",
+      "command": "npm.cmd",
+      "args": ["ci", "--no-audit", "--no-fund"]
+    }
+  ],
+  "fullTest": {
+    "workingDirectory": "backend",
+    "command": "npm.cmd",
+    "args": ["test"]
+  },
+  "focusedTest": {
+    "workingDirectory": "backend",
+    "command": "node",
+    "args": ["--test", "test/{filter}*.test.js"]
+  },
+  "security": {
+    "includeSecretsInRecoveryArchive": false
+  }
+}
