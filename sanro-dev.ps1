@@ -4,7 +4,7 @@ param(
     [string]$Command,
 
     [string]$ProjectRoot = (Get-Location).Path,
-    [ValidateSet('generic','node','wordpress')]
+    [ValidateSet('generic','node','wordpress','sanro-node','sanro-wordpress')]
     [string]$Template = 'generic',
     [string]$ProjectName = '',
     [string]$Query = '',
@@ -74,8 +74,14 @@ Commands:
   test       Run focused tests with -Filter, or configured full tests
   snapshot   Export a source-only offline recovery ZIP
 
+Templates:
+  generic, node, wordpress, sanro-node, sanro-wordpress
+
+SANRO templates also create a default AGENTS.md when one does not already exist.
+Existing AGENTS.md is preserved.
+
 Examples:
-  .\sanro-dev.ps1 init -ProjectRoot C:\work\app -Template node -ProjectName "SANRO App"
+  .\sanro-dev.ps1 init -ProjectRoot C:\work\app -Template sanro-node -ProjectName "SANRO App"
   .\sanro-dev.ps1 bootstrap -ProjectRoot C:\work\app -InstallMissing
   .\sanro-dev.ps1 context -ProjectRoot C:\work\app -Query subscription
   .\sanro-dev.ps1 test -ProjectRoot C:\work\app -Filter subscription

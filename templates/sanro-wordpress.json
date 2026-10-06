@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "project": "SANRO WordPress Project",
+  "projectType": "sanro-wordpress",
+  "requiredTools": ["git", "rg"],
+  "optionalTools": ["php", "node", "npm", "fd", "ast-grep"],
+  "dependencyCommands": [],
+  "fullTest": null,
+  "focusedTest": null,
+  "security": {
+    "includeSecretsInRecoveryArchive": false
+  },
+  "sanro": {
+    "codexReady": true,
+    "focusedFirst": true,
+    "fullRegressionNearBatchEnd": true,
+    "remoteEvidenceRequired": true
+  }
+}
