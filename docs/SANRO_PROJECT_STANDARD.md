@@ -18,9 +18,32 @@ Projects with multiple agents, production gates, or long-running development sho
 
 Normal continuation should be:
 
-`status -> sync -> relevant context -> scoped work -> check -> focused test -> coherent commit -> full regression near batch end -> handoff`
+`handoff/status -> sync -> relevant context -> scoped work -> check -> focused test -> coherent commit -> full regression near batch end -> handoff`
 
 This ordering is intended to reduce token/quota use while keeping the work reproducible and safe.
+
+## Cross-agent handoff contract
+
+Long-running SANRO repositories should configure a `handoff` block in `sanro-dev.project.json`:
+
+```json
+{
+  "handoff": {
+    "agentsFile": "AGENTS.md",
+    "workboard": "docs/WORKBOARD.md",
+    "checkpoint": "docs/CHECKPOINT.md",
+    "rules": ["SANRO_DEVELOPMENT_RULES.md"],
+    "remoteIsSourceOfTruth": true,
+    "recentCommitCount": 8
+  }
+}
+```
+
+`workboard`, `checkpoint`, and `rules` may be empty when a small project does not use them. Do not invent paths: use files that actually exist in the target repository.
+
+The toolkit `handoff` command is intentionally read-only. It reports repository identity/context, configured shared-memory file presence, bounded recent commits, and changed-path summaries without reading business data or secret contents.
+
+When ChatGPT and Codex are both active, they should use separate lanes/file ownership. When one resets or loses quota, the other resumes from remote HEAD and current workboard/checkpoint evidence rather than from stale chat memory.
 
 ## Codex-ready initialization
 
@@ -42,12 +65,14 @@ After initialization, review the generated commands and paths, then run:
 
 ```powershell
 .\sanro-dev.ps1 bootstrap -ProjectRoot "C:\work\My-SANRO-App" -InstallMissing
+.\sanro-dev.ps1 handoff -ProjectRoot "C:\work\My-SANRO-App"
 .\sanro-dev.ps1 status -ProjectRoot "C:\work\My-SANRO-App"
 .\sanro-dev.ps1 check -ProjectRoot "C:\work\My-SANRO-App"
 ```
 
 ## Efficiency rules
 
+- Use `handoff` first after reset/quota loss to recover branch/HEAD/shared-memory pointers quickly.
 - Use literal context search before broad repository scans.
 - Read recent diffs and relevant files instead of full history.
 - Run focused tests before full suites.
@@ -69,7 +94,8 @@ Existing SANRO repositories can adopt the standard incrementally:
 
 1. Add or review `sanro-dev.project.json`.
 2. Keep existing stricter `AGENTS.md`; do not replace project-specific rules with the generic template.
-3. Validate `status`, `context`, `check`, focused test, and full test commands.
-4. Only then treat the repository as SANRO Dev Toolkit-ready.
+3. Configure only real `handoff` paths for AGENTS/workboard/checkpoint/rules.
+4. Validate `handoff`, `status`, `context`, `check`, focused test, and full test commands.
+5. Only then treat the repository as SANRO Dev Toolkit-ready.
 
-The standalone toolkit is reusable; each application repository remains responsible for its own business rules, production gates, branch policy, and test commands.
+The standalone toolkit is reusable; each application repository remains responsible for its own business rules, production gates, branch policy, lane ownership, and test commands.

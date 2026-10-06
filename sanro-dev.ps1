@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet('init','bootstrap','status','context','check','test','snapshot','help')]
+    [ValidateSet('init','bootstrap','status','handoff','context','check','test','snapshot','help')]
     [string]$Command,
 
     [string]$ProjectRoot = (Get-Location).Path,
@@ -9,6 +9,7 @@ param(
     [string]$ProjectName = '',
     [string]$Query = '',
     [string]$Filter = '',
+    [int]$RecentCommitCount = 0,
     [switch]$InstallMissing,
     [switch]$SkipDependencies,
     [switch]$Force,
@@ -46,6 +47,12 @@ switch ($Command) {
     'status' {
         Invoke-Child 'status.ps1' @{ ProjectRoot = $ProjectRoot }
     }
+    'handoff' {
+        Invoke-Child 'handoff.ps1' @{
+            ProjectRoot = $ProjectRoot
+            RecentCommitCount = $RecentCommitCount
+        }
+    }
     'context' {
         if ([string]::IsNullOrWhiteSpace($Query)) { throw 'context requires -Query.' }
         Invoke-Child 'context.ps1' @{ ProjectRoot = $ProjectRoot; Query = $Query }
@@ -69,6 +76,7 @@ Commands:
   init       Create sanro-dev.project.json from a template
   bootstrap  Check/install supported tools and restore dependencies
   status     Show repository, branch, working tree, and tool state
+  handoff    Show concise cross-agent recovery/handoff context
   context    Fast literal context search; requires -Query
   check      Diff hygiene + changed-file syntax checks
   test       Run focused tests with -Filter, or configured full tests
@@ -83,6 +91,7 @@ Existing AGENTS.md is preserved.
 Examples:
   .\sanro-dev.ps1 init -ProjectRoot C:\work\app -Template sanro-node -ProjectName "SANRO App"
   .\sanro-dev.ps1 bootstrap -ProjectRoot C:\work\app -InstallMissing
+  .\sanro-dev.ps1 handoff -ProjectRoot C:\work\app
   .\sanro-dev.ps1 context -ProjectRoot C:\work\app -Query subscription
   .\sanro-dev.ps1 test -ProjectRoot C:\work\app -Filter subscription
 '@

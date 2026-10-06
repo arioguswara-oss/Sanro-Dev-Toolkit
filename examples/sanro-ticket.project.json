@@ -23,6 +23,14 @@
     "command": "node",
     "args": ["--test", "test/{filter}*.test.js"]
   },
+  "handoff": {
+    "agentsFile": "AGENTS.md",
+    "workboard": "",
+    "checkpoint": "",
+    "rules": [],
+    "remoteIsSourceOfTruth": true,
+    "recentCommitCount": 8
+  },
   "security": {"includeSecretsInRecoveryArchive": false},
   "sanro": {"codexReady": true, "focusedFirst": true, "fullRegressionNearBatchEnd": true, "remoteEvidenceRequired": true}
 }

@@ -13,9 +13,9 @@ This file is generated from SANRO Dev Toolkit and should be adapted only where t
 
 When Rio says `lanjut`, do real scoped work instead of returning only a plan.
 
-1. Run SANRO Dev Toolkit `status` for this project.
+1. Run SANRO Dev Toolkit `handoff` for this project; if handoff is not configured yet, run `status`.
 2. Sync/fetch the current project branch.
-3. Read this `AGENTS.md` and only the relevant workboard/checkpoint/rules sections.
+3. Read this `AGENTS.md` and only the relevant workboard/checkpoint/rules sections shown by handoff.
 4. Use toolkit `context` before any broad repository scan.
 5. Take only a non-conflicting lane/scope.
 6. Make the smallest coherent change.
@@ -27,7 +27,7 @@ When Rio says `lanjut`, do real scoped work instead of returning only a plan.
 ## Codex efficiency
 
 - Do not reread long unchanged documents on every turn.
-- Prefer recent diffs, exact files, and literal context search.
+- Prefer recent diffs, exact files, literal context search, and the concise `handoff` summary.
 - Do not rerun full suites after every small edit.
 - Stop scope expansion once acceptance criteria are met.
 - Preserve remote evidence frequently enough that reset/quota exhaustion does not lose meaningful work.
@@ -37,7 +37,8 @@ When Rio says `lanjut`, do real scoped work instead of returning only a plan.
 - Check ownership before editing shared files.
 - Do not edit an area owned by another active agent unless ownership is explicitly transferred.
 - If one lane is blocked, continue another safe independent lane.
-- After reset, sync remote HEAD before doing anything else.
+- After reset, run `handoff`, then sync remote HEAD before doing anything else.
+- ChatGPT and Codex should work on separate lanes when both are active.
 
 ## Safety
 
@@ -52,6 +53,7 @@ CI/source tests are source evidence only. They do not by themselves prove produc
 Typical commands from the standalone toolkit repository:
 
 ```powershell
+.\sanro-dev.ps1 handoff -ProjectRoot "<project-path>"
 .\sanro-dev.ps1 status  -ProjectRoot "<project-path>"
 .\sanro-dev.ps1 context -ProjectRoot "<project-path>" -Query "<keyword>"
 .\sanro-dev.ps1 check   -ProjectRoot "<project-path>"

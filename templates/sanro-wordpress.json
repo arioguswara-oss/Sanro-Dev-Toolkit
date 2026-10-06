@@ -7,6 +7,14 @@
   "dependencyCommands": [],
   "fullTest": null,
   "focusedTest": null,
+  "handoff": {
+    "agentsFile": "AGENTS.md",
+    "workboard": "",
+    "checkpoint": "",
+    "rules": [],
+    "remoteIsSourceOfTruth": true,
+    "recentCommitCount": 8
+  },
   "security": {
     "includeSecretsInRecoveryArchive": false
   },

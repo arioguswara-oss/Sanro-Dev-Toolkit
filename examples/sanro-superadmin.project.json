@@ -23,6 +23,17 @@
     "command": "node",
     "args": ["--test", "test/{filter}*.test.js"]
   },
+  "handoff": {
+    "agentsFile": "AGENTS.md",
+    "workboard": "docs/SUPERADMIN_WORKBOARD.md",
+    "checkpoint": "docs/CHECKPOINT_V0_3_8_WIP.md",
+    "rules": [
+      "SANRO_DEVELOPMENT_RULES.md",
+      "SUPERADMIN_PROJECT_OPERATING_RULES.md"
+    ],
+    "remoteIsSourceOfTruth": true,
+    "recentCommitCount": 8
+  },
   "security": {
     "includeSecretsInRecoveryArchive": false
   }

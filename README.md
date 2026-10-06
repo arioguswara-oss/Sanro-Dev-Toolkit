@@ -1,14 +1,15 @@
 # SANRO Dev Toolkit
 
-Portable development and recovery toolkit for SANRO projects.
+Portable development, recovery, and cross-agent handoff toolkit for SANRO projects.
 
-The toolkit is intentionally project-agnostic. A project describes its own working directories, required tools, dependency install commands, and test runner in `sanro-dev.project.json`; the reusable PowerShell scripts stay in this repository.
+The toolkit is intentionally project-agnostic. A project describes its own working directories, required tools, dependency install commands, test runner, and handoff/shared-memory paths in `sanro-dev.project.json`; the reusable PowerShell scripts stay in this repository.
 
 ## Goals
 
 - Recover a development machine quickly after device loss or replacement.
 - Reuse the same safe workflow across SANRO Superadmin, POS, Stock, Ticket, WordPress/plugin/theme, and future projects.
 - Make new SANRO repositories Codex-ready from the first commit.
+- Make ChatGPT <-> Codex takeover cheap after reset/quota loss.
 - Prefer focused search/test loops before broad scans or full regression.
 - Keep credentials and production secrets out of Git and recovery archives.
 
@@ -32,6 +33,7 @@ For an existing SANRO project that already contains `sanro-dev.project.json`:
 
 ```powershell
 .\sanro-dev.ps1 bootstrap -ProjectRoot "C:\path\to\project" -InstallMissing
+.\sanro-dev.ps1 handoff   -ProjectRoot "C:\path\to\project"
 .\sanro-dev.ps1 status    -ProjectRoot "C:\path\to\project"
 .\sanro-dev.ps1 check     -ProjectRoot "C:\path\to\project"
 .\sanro-dev.ps1 test      -ProjectRoot "C:\path\to\project"
@@ -69,18 +71,46 @@ Available templates:
 sanro-dev.ps1 init       Create sanro-dev.project.json from a template
 sanro-dev.ps1 bootstrap  Check/install supported tools and restore dependencies
 sanro-dev.ps1 status     Show repository/branch/working tree/tool status
+sanro-dev.ps1 handoff    Show concise branch/HEAD/shared-memory/change/recent-commit context
 sanro-dev.ps1 context    Fast literal filename/content search with ripgrep
 sanro-dev.ps1 check      Diff hygiene + syntax checks for changed files
 sanro-dev.ps1 test       Focused or full configured tests
 sanro-dev.ps1 snapshot   Create an offline recovery ZIP of this toolkit
 ```
 
+## Cross-agent handoff
+
+For long-running SANRO projects, add a `handoff` object to `sanro-dev.project.json`:
+
+```json
+{
+  "handoff": {
+    "agentsFile": "AGENTS.md",
+    "workboard": "docs/WORKBOARD.md",
+    "checkpoint": "docs/CHECKPOINT.md",
+    "rules": ["SANRO_DEVELOPMENT_RULES.md"],
+    "remoteIsSourceOfTruth": true,
+    "recentCommitCount": 8
+  }
+}
+```
+
+Then run:
+
+```powershell
+.\sanro-dev.ps1 handoff -ProjectRoot "C:\path\to\project"
+```
+
+The handoff command is read-only. It summarizes branch, HEAD, upstream presence, working-tree change count, configured shared-memory files, safe changed paths, and recent commit subjects. Sensitive-looking paths are redacted. It does not read file contents and does not prove hosting/production state.
+
+This gives ChatGPT or Codex a compact re-entry point after reset without forcing a broad repository audit.
+
 ## Standard Codex workflow
 
 For SANRO repositories the default efficient loop is:
 
 ```text
-status -> sync -> relevant context -> scoped work -> check -> focused test -> coherent commit -> full regression near batch end -> handoff
+handoff/status -> sync -> relevant context -> scoped work -> check -> focused test -> coherent commit -> full regression near batch end -> handoff
 ```
 
 This is designed to reduce repeated broad scans, unnecessary full-test runs, and reset/quota recovery cost without weakening project-specific safety gates.
@@ -95,10 +125,10 @@ See `SECURITY.md` and `docs/RECOVERY.md`.
 
 ## Existing SANRO projects
 
-Existing repositories can adopt the toolkit incrementally. Keep stricter existing `AGENTS.md` and production rules, add/review `sanro-dev.project.json`, then validate toolkit commands before treating the repository as ready.
+Existing repositories can adopt the toolkit incrementally. Keep stricter existing `AGENTS.md` and production rules, add/review `sanro-dev.project.json`, configure `handoff` paths, then validate toolkit commands before treating the repository as ready.
 
-The Superadmin example remains in `examples/sanro-superadmin.project.json`; additional project-specific examples can be added without changing the reusable core.
+The Superadmin, POS/Stock, and Ticket examples are under `examples/`; project-specific paths should be verified against each repository before adoption.
 
 ## Origin
 
-The first toolkit scripts were proven in `arioguswara-oss/Sanro-SuperAdmin`. This standalone repository makes the recovery/tooling layer reusable without coupling it to one application repository.
+The first toolkit scripts were proven in `arioguswara-oss/Sanro-SuperAdmin`. This standalone repository makes the recovery/tooling/handoff layer reusable without coupling it to one application repository.
