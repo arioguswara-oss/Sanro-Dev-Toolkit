@@ -1,6 +1,6 @@
 # Ubuntu Runtime Validation — 2026-10-08
 
-Status: **IN_PROGRESS / HOST FOUNDATION VERIFIED / TOOLKIT LAUNCHER VERIFIED / PROJECT BOOTSTRAP VERIFIED / FULL TOOLKIT RUNTIME PENDING**
+Status: **IN_PROGRESS / HOST FOUNDATION VERIFIED / TOOLKIT LAUNCHER VERIFIED / PROJECT BOOTSTRAP VERIFIED / CORE COMMANDS PARTIAL / FULL TOOLKIT RUNTIME PENDING**
 
 This document records the first real Ubuntu runtime evidence for SANRO Dev Toolkit V1.3.x on the SANRO Super Agent pilot VPS.
 
@@ -39,7 +39,21 @@ Observed tool versions included:
 
 A disposable non-production project at `/opt/sanro/validation-app` was initialized from the `sanro-node` template. Its generated configuration used canonical `npm`, required Git/Node/npm/ripgrep, optional fd/ast-grep, minimum Node major 20, and the normal SANRO handoff/safety defaults.
 
-The real Ubuntu project bootstrap command was then exercised with `-InstallMissing -SkipDependencies`. It completed successfully, installed/checks required tooling including ripgrep, intentionally skipped dependency restore, and ended with `RECOVERY BOOTSTRAP COMPLETE`. This verifies the Ubuntu project bootstrap path without touching any SANRO production repository or running application dependency installation.
+The real Ubuntu project bootstrap command was then exercised with `-InstallMissing -SkipDependencies`. It completed successfully, installed/checked required tooling including ripgrep, intentionally skipped dependency restore, and ended with `RECOVERY BOOTSTRAP COMPLETE`. This verifies the Ubuntu project bootstrap path without touching any SANRO production repository or running application dependency installation.
+
+The disposable project was then committed locally and verified with a clean working tree so subsequent toolkit commands had a valid HEAD.
+
+## Core command evidence
+
+The first real Ubuntu core-command pass produced the following evidence:
+
+- `handoff`: command completed and emitted the expected concise next-action guidance.
+- `status`: repository/platform state was read successfully, but tool version rendering displayed `System.Object[]` for several tools instead of a concrete version string. This is treated as a real runtime formatting defect, not a full PASS for status output quality.
+- `context`: PASS; the literal query `SANRO validation` found the expected content in the disposable project.
+- `check`: PASS; `git diff --check HEAD` and the fast source checks completed with `FAST CHECK PASS`.
+- focused `test`: the toolkit printed `SANRO TEST RUNNER - FOCUSED: validation`, but no TAP/test summary was visible before returning to the shell. This is **not** yet counted as a focused-test PASS. A direct Node test plus exit-code comparison is required to determine whether arguments were dropped or output handling is defective.
+
+Do not manually patch the VPS copy before the toolkit source defect is diagnosed and corrected in GitHub.
 
 ## Security baseline observed before toolkit validation
 
@@ -55,15 +69,13 @@ A new root SSH login attempt was rejected. Existing root setup sessions were clo
 
 ## Remaining validation gate
 
-Do **not** label the whole toolkit `UBUNTU RUNTIME VERIFIED` yet. The following remain to be exercised on this real Ubuntu host:
+Do **not** label the whole toolkit `UBUNTU RUNTIME VERIFIED` yet. The following remain:
 
-1. `handoff`
-2. `status`
-3. `context`
-4. `check`
-5. focused `test`
-6. `snapshot`
-7. Linux compatibility for a project config that still contains legacy `npm.cmd`
-8. recovery output review confirming that no secret/credential content is included
+1. Diagnose and correct `status` tool-version rendering.
+2. Prove focused test execution with direct Node output plus toolkit exit-code evidence, then correct the toolkit if needed.
+3. `snapshot`.
+4. Linux compatibility for a project config that still contains legacy `npm.cmd`.
+5. Recovery output review confirming that no secret/credential content is included.
+6. Rerun the affected core commands after any source fix and only then promote the Ubuntu runtime status.
 
-These should be tested against the disposable/non-production validation project before full Ubuntu runtime validation is claimed.
+All validation remains confined to the disposable/non-production project.
