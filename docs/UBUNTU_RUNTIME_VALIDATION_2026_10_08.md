@@ -1,6 +1,6 @@
 # Ubuntu Runtime Validation — 2026-10-08
 
-Status: **IN_PROGRESS / HOST FOUNDATION VERIFIED / TOOLKIT LAUNCHER VERIFIED / PROJECT BOOTSTRAP VERIFIED / CORE COMMANDS VERIFIED / FULL TOOLKIT RUNTIME PENDING**
+Status: **IN_PROGRESS / HOST FOUNDATION VERIFIED / TOOLKIT LAUNCHER VERIFIED / PROJECT BOOTSTRAP VERIFIED / CORE COMMANDS VERIFIED / SNAPSHOT VERIFIED / FULL TOOLKIT RUNTIME PENDING**
 
 This document records the first real Ubuntu runtime evidence for SANRO Dev Toolkit V1.3.x on the SANRO Super Agent pilot VPS.
 
@@ -56,6 +56,12 @@ V1.3.2 corrected configured argument forwarding but still allowed child stdout t
 
 The real VPS rerun on V1.3.3 displayed the full TAP output and returned exit code `0`. GitHub Actions run #15 for the follow-up CI probe also completed successfully, covering both Ubuntu and Windows command-resolution/helper behavior.
 
+## Recovery snapshot evidence
+
+The real VPS executed `./sanro-dev.sh snapshot -OutputDirectory /opt/sanro/recovery-validation` successfully. The toolkit produced a recovery ZIP in the requested non-production validation directory, and `ls -lh` confirmed the archive existed with a non-zero size (approximately 40 KiB). This verifies snapshot creation on Ubuntu.
+
+Archive-content safety review is still pending. The snapshot script source excludes `.git`, `node_modules`, build/dist/coverage output, existing recovery folders, ZIPs, `.env` files, PEM/key files, common SSH private-key names, and credential/secret JSON filename patterns before compression.
+
 ## Security baseline observed before toolkit validation
 
 The pilot VPS was prepared with a non-root `sanro` user using SSH public-key authentication and sudo. UFW is enabled with SSH allowed. Effective OpenSSH settings were verified to include:
@@ -72,8 +78,7 @@ A new root SSH login attempt was rejected. Existing root setup sessions were clo
 
 Do **not** label the whole toolkit `UBUNTU RUNTIME VERIFIED` yet. Remaining gates are:
 
-1. Exercise `snapshot` against the disposable project.
-2. Prove Linux compatibility for a project config that still contains legacy `npm.cmd`.
-3. Review recovery output and confirm no secret/credential content is included.
+1. Prove Linux compatibility for a project config that still contains legacy `npm.cmd`.
+2. Review recovery archive contents and confirm no secret/credential content is included.
 
 All runtime validation remains confined to the disposable/non-production project.
