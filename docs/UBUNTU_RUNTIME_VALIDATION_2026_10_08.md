@@ -1,6 +1,6 @@
 # Ubuntu Runtime Validation — 2026-10-08
 
-Status: **IN_PROGRESS / HOST FOUNDATION VERIFIED / TOOLKIT LAUNCHER VERIFIED / PROJECT BOOTSTRAP VERIFIED / CORE COMMANDS VERIFIED / SNAPSHOT VERIFIED / FULL TOOLKIT RUNTIME PENDING**
+Status: **IN_PROGRESS / HOST FOUNDATION VERIFIED / TOOLKIT LAUNCHER VERIFIED / PROJECT BOOTSTRAP VERIFIED / CORE COMMANDS VERIFIED / SNAPSHOT VERIFIED / RECOVERY SAFETY REVIEW VERIFIED / FULL TOOLKIT RUNTIME PENDING**
 
 This document records the first real Ubuntu runtime evidence for SANRO Dev Toolkit V1.3.x on the SANRO Super Agent pilot VPS.
 
@@ -60,7 +60,7 @@ The real VPS rerun on V1.3.3 displayed the full TAP output and returned exit cod
 
 The real VPS executed `./sanro-dev.sh snapshot -OutputDirectory /opt/sanro/recovery-validation` successfully. The toolkit produced a recovery ZIP in the requested non-production validation directory, and `ls -lh` confirmed the archive existed with a non-zero size (approximately 40 KiB). This verifies snapshot creation on Ubuntu.
 
-Archive-content safety review is still pending. The snapshot script source excludes `.git`, `node_modules`, build/dist/coverage output, existing recovery folders, ZIPs, `.env` files, PEM/key files, common SSH private-key names, and credential/secret JSON filename patterns before compression.
+A filename-level safety review was then run against the ZIP without extraction. The archive contained 32 files, and the sensitive-name scan returned no matches for `.env` / `.env.*`, common SSH private-key names, PEM/key files, credential/secret JSON names, token-like names, or password-like names. This verifies the intended filename-based exclusion behavior for the observed recovery archive. It does not claim semantic scanning of arbitrary file contents beyond the configured snapshot exclusion contract.
 
 ## Security baseline observed before toolkit validation
 
@@ -76,9 +76,8 @@ A new root SSH login attempt was rejected. Existing root setup sessions were clo
 
 ## Remaining validation gate
 
-Do **not** label the whole toolkit `UBUNTU RUNTIME VERIFIED` yet. Remaining gates are:
+Do **not** label the whole toolkit `UBUNTU RUNTIME VERIFIED` yet. One gate remains:
 
 1. Prove Linux compatibility for a project config that still contains legacy `npm.cmd`.
-2. Review recovery archive contents and confirm no secret/credential content is included.
 
 All runtime validation remains confined to the disposable/non-production project.
