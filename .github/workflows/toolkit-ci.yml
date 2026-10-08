@@ -72,6 +72,26 @@ jobs:
             throw "Unexpected CI platform: $platform"
           }
 
+      - name: Validate configured command argument forwarding
+        shell: pwsh
+        run: |
+          . ./tools/common.ps1
+          $temp = Join-Path $PWD '.tmp-command-forwarding'
+          New-Item -ItemType Directory -Path $temp -Force | Out-Null
+          $probe = Join-Path $temp 'probe.ps1'
+          @'
+          param([string]$First, [string]$Second)
+          if ($First -ne 'alpha' -or $Second -ne 'beta') { exit 17 }
+          Write-Host 'ARG_FORWARDING_OK'
+          '@ | Set-Content -LiteralPath $probe
+          $cfg = [pscustomobject]@{
+            workingDirectory = '.'
+            command = 'pwsh'
+            args = @('-NoProfile', '-File', $probe, 'alpha', 'beta')
+          }
+          $code = Invoke-SanroConfiguredCommand $PWD $cfg
+          if ($code -ne 0) { throw "Configured command forwarding failed with exit $code" }
+
       - name: Ubuntu launcher and host check
         if: runner.os == 'Linux'
         shell: bash

@@ -29,9 +29,7 @@ try {
     foreach ($name in @($required + @($config.optionalTools) | Where-Object { $_ } | Sort-Object -Unique)) {
         $requiredTool = $required -contains $name
         if (Test-SanroCommand $name) {
-            $command = Get-SanroToolCommand $name
-            $version = @(& $command --version 2>$null | Select-Object -First 1)
-            Write-Host ("[OK] {0}: {1}" -f $name, $version)
+            Write-Host ("[OK] {0}: {1}" -f $name, (Get-SanroToolVersion $name))
         }
         elseif ($requiredTool) { Write-Host ("[FAIL] {0}: unavailable" -f $name); $failed = $true }
         else { Write-Host ("[OPTIONAL] {0}: unavailable" -f $name) }

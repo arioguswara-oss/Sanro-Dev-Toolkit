@@ -66,6 +66,14 @@ function Test-SanroCommand([string]$Name) {
     return -not [string]::IsNullOrWhiteSpace($command) -and $null -ne (Get-Command $command -ErrorAction SilentlyContinue)
 }
 
+function Get-SanroToolVersion([string]$Name) {
+    $command = Get-SanroToolCommand $Name
+    if ([string]::IsNullOrWhiteSpace($command)) { return '' }
+    $value = & $command --version 2>$null | Select-Object -First 1
+    if ($null -eq $value) { return '' }
+    return ([string]$value).Trim()
+}
+
 function Invoke-SanroConfiguredCommand([string]$ProjectRoot, $CommandConfig) {
     if ($null -eq $CommandConfig) { throw 'Configured command is missing.' }
     $working = [string]$CommandConfig.workingDirectory
@@ -80,10 +88,10 @@ function Invoke-SanroConfiguredCommand([string]$ProjectRoot, $CommandConfig) {
     if ($null -eq (Get-Command $command -ErrorAction SilentlyContinue)) {
         throw "Configured command unavailable on $(Get-SanroPlatform): $configuredCommand (resolved: $command)"
     }
-    $args = @($CommandConfig.args)
+    $commandArgs = @($CommandConfig.args | ForEach-Object { [string]$_ })
     Push-Location $workDir
     try {
-        & $command @args
+        & $command @commandArgs
         return $LASTEXITCODE
     }
     finally { Pop-Location }
