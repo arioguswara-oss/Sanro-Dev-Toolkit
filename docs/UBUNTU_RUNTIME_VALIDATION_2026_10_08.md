@@ -1,6 +1,6 @@
 # Ubuntu Runtime Validation — 2026-10-08
 
-Status: **IN_PROGRESS / HOST FOUNDATION VERIFIED / FULL TOOLKIT RUNTIME PENDING**
+Status: **IN_PROGRESS / HOST FOUNDATION VERIFIED / TOOLKIT LAUNCHER VERIFIED / FULL TOOLKIT RUNTIME PENDING**
 
 This document records the first real Ubuntu runtime evidence for SANRO Dev Toolkit V1.3.x on the SANRO Super Agent pilot VPS.
 
@@ -27,6 +27,7 @@ The following real-host observations passed:
 5. V1.3.1 universal Microsoft PowerShell `.deb` fallback was then exercised successfully on the real host.
 6. A subsequent `./bootstrap-ubuntu.sh --check` reported Git, curl, and `pwsh` as available.
 7. `pwsh --version` reported `PowerShell 7.6.6`.
+8. `./sanro-dev.sh help` launched successfully through PowerShell 7 and displayed the expected cross-platform command/help output.
 
 Observed tool versions included:
 
@@ -50,14 +51,13 @@ A new root SSH login attempt was rejected. Existing root setup sessions were clo
 
 Do **not** label the whole toolkit `UBUNTU RUNTIME VERIFIED` yet. The following remain to be exercised on this real Ubuntu host:
 
-1. `./sanro-dev.sh help`
-2. `handoff`
-3. `status`
-4. `context`
-5. `check`
-6. focused `test`
-7. `snapshot`
-8. Linux compatibility for a project config that still contains legacy `npm.cmd`
-9. recovery output review confirming that no secret/credential content is included
+1. `handoff`
+2. `status`
+3. `context`
+4. `check`
+5. focused `test`
+6. `snapshot`
+7. Linux compatibility for a project config that still contains legacy `npm.cmd`
+8. recovery output review confirming that no secret/credential content is included
 
 These should be tested against a disposable or non-production SANRO project/config before full Ubuntu runtime validation is claimed.
