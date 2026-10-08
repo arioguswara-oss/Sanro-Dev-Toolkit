@@ -1,0 +1,88 @@
+name: SANRO Dev Toolkit CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse PowerShell source
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem -Path . -Recurse -File -Filter '*.ps1' | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count) {
+              $failed = $true
+              Write-Host "[FAIL] $($_.FullName)"
+              $errors | ForEach-Object { Write-Host $_.Message }
+            }
+            else {
+              Write-Host "[OK] $($_.FullName)"
+            }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Validate JSON configuration files
+        shell: pwsh
+        run: |
+          $files = @(
+            Get-ChildItem -Path templates -File -Filter '*.json'
+            Get-ChildItem -Path examples -File -Filter '*.json'
+          )
+          foreach ($file in $files) {
+            Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json | Out-Null
+            Write-Host "[OK] $($file.FullName)"
+          }
+
+      - name: Validate platform command resolution
+        shell: pwsh
+        run: |
+          . ./tools/common.ps1
+          $platform = Get-SanroPlatform
+          Write-Host "Platform: $platform"
+          if ($IsWindows) {
+            if ($platform -ne 'windows') { throw "Expected windows, got $platform" }
+            if ((Get-SanroToolCommand 'npm') -ne 'npm.cmd') { throw 'Windows npm resolution failed.' }
+          }
+          elseif ($IsLinux) {
+            if ($platform -ne 'linux') { throw "Expected linux, got $platform" }
+            if ((Get-SanroToolCommand 'npm.cmd') -ne 'npm') { throw 'Linux npm.cmd compatibility resolution failed.' }
+          }
+          else {
+            throw "Unexpected CI platform: $platform"
+          }
+
+      - name: Ubuntu launcher and host check
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          bash -n sanro-dev.sh
+          bash -n bootstrap-ubuntu.sh
+          ./bootstrap-ubuntu.sh --check
+          ./sanro-dev.sh help
+
+      - name: Windows launcher help
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          ./sanro-dev.ps1 help
