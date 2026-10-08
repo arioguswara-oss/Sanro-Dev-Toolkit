@@ -1,8 +1,8 @@
 # Ubuntu Runtime Validation — 2026-10-08
 
-Status: **IN_PROGRESS / HOST FOUNDATION VERIFIED / TOOLKIT LAUNCHER VERIFIED / PROJECT BOOTSTRAP VERIFIED / CORE COMMANDS VERIFIED / SNAPSHOT VERIFIED / RECOVERY SAFETY REVIEW VERIFIED / FULL TOOLKIT RUNTIME PENDING**
+Status: **UBUNTU RUNTIME VERIFIED / V1.3.3**
 
-This document records the first real Ubuntu runtime evidence for SANRO Dev Toolkit V1.3.x on the SANRO Super Agent pilot VPS.
+This document records the first real Ubuntu runtime verification for SANRO Dev Toolkit V1.3.3 on the SANRO Super Agent pilot VPS.
 
 ## Environment observed
 
@@ -62,6 +62,14 @@ The real VPS executed `./sanro-dev.sh snapshot -OutputDirectory /opt/sanro/recov
 
 A filename-level safety review was then run against the ZIP without extraction. The archive contained 32 files, and the sensitive-name scan returned no matches for `.env` / `.env.*`, common SSH private-key names, PEM/key files, credential/secret JSON names, token-like names, or password-like names. This verifies the intended filename-based exclusion behavior for the observed recovery archive. It does not claim semantic scanning of arbitrary file contents beyond the configured snapshot exclusion contract.
 
+## Legacy `npm.cmd` compatibility evidence
+
+The disposable project configuration was temporarily changed so the focused-test command used legacy Windows-style `npm.cmd` instead of canonical `npm`.
+
+On Ubuntu, the toolkit resolved that configured command to Linux `npm` and executed the focused test successfully. The npm script invoked `node --test test/validation.test.js`, TAP reported `tests 1`, `pass 1`, `fail 0`, and the immediately observed shell exit value was `legacy_npmcmd_exit=0`.
+
+This verifies the V1.3.x compatibility contract that existing SANRO project configs containing `npm.cmd` can run on Ubuntu without being rewritten only for platform naming differences.
+
 ## Security baseline observed before toolkit validation
 
 The pilot VPS was prepared with a non-root `sanro` user using SSH public-key authentication and sudo. UFW is enabled with SSH allowed. Effective OpenSSH settings were verified to include:
@@ -74,10 +82,10 @@ The pilot VPS was prepared with a non-root `sanro` user using SSH public-key aut
 
 A new root SSH login attempt was rejected. Existing root setup sessions were closed after the non-root key path was proven.
 
-## Remaining validation gate
+## Verification conclusion
 
-Do **not** label the whole toolkit `UBUNTU RUNTIME VERIFIED` yet. One gate remains:
+SANRO Dev Toolkit V1.3.3 is **UBUNTU RUNTIME VERIFIED** for the tested Ubuntu 26.04.1 LTS pilot-host baseline.
 
-1. Prove Linux compatibility for a project config that still contains legacy `npm.cmd`.
+Verified scope includes host bootstrap/fallback, launcher, project bootstrap, `handoff`, `status`, `context`, `check`, focused `test`, snapshot creation, filename-level recovery exclusion review, legacy `npm.cmd` resolution on Linux, and the cross-platform helper CI path.
 
-All runtime validation remains confined to the disposable/non-production project.
+This verification does **not** grant production mutation permission and does not prove every Linux distribution or future package version. Production deploys, production database mutation/migration, credential changes, runtime restart/reconfiguration, default-OFF activation, destructive Git actions, and LOCKED behavior changes remain explicit Rio approval gates.
