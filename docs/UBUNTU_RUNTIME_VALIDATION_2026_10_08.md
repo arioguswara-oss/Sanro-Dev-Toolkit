@@ -1,6 +1,6 @@
 # Ubuntu Runtime Validation — 2026-10-08
 
-Status: **IN_PROGRESS / HOST FOUNDATION VERIFIED / TOOLKIT LAUNCHER VERIFIED / PROJECT BOOTSTRAP VERIFIED / STATUS VERIFIED / FOCUSED TEST FIX PENDING RERUN / FULL TOOLKIT RUNTIME PENDING**
+Status: **IN_PROGRESS / HOST FOUNDATION VERIFIED / TOOLKIT LAUNCHER VERIFIED / PROJECT BOOTSTRAP VERIFIED / CORE COMMANDS VERIFIED / FULL TOOLKIT RUNTIME PENDING**
 
 This document records the first real Ubuntu runtime evidence for SANRO Dev Toolkit V1.3.x on the SANRO Super Agent pilot VPS.
 
@@ -42,26 +42,19 @@ The disposable project was committed locally and verified with a clean working t
 
 Observed on the real Ubuntu VPS:
 
-- `handoff`: completed and emitted the expected concise next-action guidance.
+- `handoff`: PASS; completed and emitted the expected concise next-action guidance.
 - `context`: PASS; the query `SANRO validation` found the expected source content.
 - `check`: PASS; `git diff --check HEAD` and fast source checks completed with `FAST CHECK PASS`.
-- `status`: V1.3.1 exposed `System.Object[]` instead of concrete tool versions. V1.3.2 corrected this. The real-host rerun displayed concrete values including `fdfind 10.3.0`, `git version 2.53.0`, `v22.22.1`, `9.2.0`, and `ripgrep 15.1.0`; status output is therefore verified.
+- `status`: PASS; after the V1.3.2 formatting fix, the real-host rerun displayed concrete tool versions including `fdfind 10.3.0`, `git version 2.53.0`, `v22.22.1`, `9.2.0`, and `ripgrep 15.1.0`.
+- focused `test`: PASS on V1.3.3; the toolkit displayed the Node TAP summary with `tests 1`, `pass 1`, `fail 0`, and the immediately observed shell exit code was `0`.
 
-### Focused-test diagnosis
+## Focused-test defect resolution
 
-The disposable project's direct command:
+The disposable project's direct `node --test test/validation.test.js` initially proved the test itself was healthy and returned exit code `0`.
 
-```bash
-node --test test/validation.test.js
-```
+V1.3.2 corrected configured argument forwarding but still allowed child stdout to flow into the PowerShell success pipeline, so callers could capture command output together with the numeric exit code. V1.3.3 changed `Invoke-SanroConfiguredCommand` to stream child stdout to the host while returning only a scalar integer exit code.
 
-ran one test successfully and returned exit code `0`.
-
-V1.3.2 corrected configured argument forwarding, but the toolkit invocation still printed only `SANRO TEST RUNNER - FOCUSED: validation` and returned exit code `0` without displaying the TAP summary. The corresponding V1.3.2 GitHub Actions run also failed its configured-command probe on both Ubuntu and Windows.
-
-The defect was traced to `Invoke-SanroConfiguredCommand`: child stdout was emitted on the PowerShell success pipeline, so callers assigning the helper result captured both command output and the numeric exit code. V1.3.3 changes the helper to stream child stdout to the host and return only a scalar integer exit code. CI now asserts both argument forwarding and scalar exit-code isolation, including propagation of a non-zero exit code.
-
-V1.3.3 is **DONE_SOURCE** for this defect, but focused test runtime remains pending until the real VPS pulls V1.3.3 and the toolkit test is rerun with visible TAP output.
+The real VPS rerun on V1.3.3 displayed the full TAP output and returned exit code `0`. GitHub Actions run #15 for the follow-up CI probe also completed successfully, covering both Ubuntu and Windows command-resolution/helper behavior.
 
 ## Security baseline observed before toolkit validation
 
@@ -79,10 +72,8 @@ A new root SSH login attempt was rejected. Existing root setup sessions were clo
 
 Do **not** label the whole toolkit `UBUNTU RUNTIME VERIFIED` yet. Remaining gates are:
 
-1. Pull V1.3.3 on the real VPS and rerun the focused toolkit test; visible TAP output and exit `0` are required.
-2. Confirm V1.3.3 GitHub Actions passes on Ubuntu and Windows.
-3. Exercise `snapshot`.
-4. Prove Linux compatibility for a project config that still contains legacy `npm.cmd`.
-5. Review recovery output and confirm no secret/credential content is included.
+1. Exercise `snapshot` against the disposable project.
+2. Prove Linux compatibility for a project config that still contains legacy `npm.cmd`.
+3. Review recovery output and confirm no secret/credential content is included.
 
 All runtime validation remains confined to the disposable/non-production project.
