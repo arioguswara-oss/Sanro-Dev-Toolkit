@@ -1,6 +1,6 @@
 # Ubuntu Runtime Validation — 2026-10-08
 
-Status: **IN_PROGRESS / HOST FOUNDATION VERIFIED / TOOLKIT LAUNCHER VERIFIED / FULL TOOLKIT RUNTIME PENDING**
+Status: **IN_PROGRESS / HOST FOUNDATION VERIFIED / TOOLKIT LAUNCHER VERIFIED / PROJECT BOOTSTRAP VERIFIED / FULL TOOLKIT RUNTIME PENDING**
 
 This document records the first real Ubuntu runtime evidence for SANRO Dev Toolkit V1.3.x on the SANRO Super Agent pilot VPS.
 
@@ -35,6 +35,12 @@ Observed tool versions included:
 - curl `8.18.0`
 - PowerShell `7.6.6`
 
+## Disposable project bootstrap evidence
+
+A disposable non-production project at `/opt/sanro/validation-app` was initialized from the `sanro-node` template. Its generated configuration used canonical `npm`, required Git/Node/npm/ripgrep, optional fd/ast-grep, minimum Node major 20, and the normal SANRO handoff/safety defaults.
+
+The real Ubuntu project bootstrap command was then exercised with `-InstallMissing -SkipDependencies`. It completed successfully, installed/checks required tooling including ripgrep, intentionally skipped dependency restore, and ended with `RECOVERY BOOTSTRAP COMPLETE`. This verifies the Ubuntu project bootstrap path without touching any SANRO production repository or running application dependency installation.
+
 ## Security baseline observed before toolkit validation
 
 The pilot VPS was prepared with a non-root `sanro` user using SSH public-key authentication and sudo. UFW is enabled with SSH allowed. Effective OpenSSH settings were verified to include:
@@ -60,4 +66,4 @@ Do **not** label the whole toolkit `UBUNTU RUNTIME VERIFIED` yet. The following 
 7. Linux compatibility for a project config that still contains legacy `npm.cmd`
 8. recovery output review confirming that no secret/credential content is included
 
-These should be tested against a disposable or non-production SANRO project/config before full Ubuntu runtime validation is claimed.
+These should be tested against the disposable/non-production validation project before full Ubuntu runtime validation is claimed.
