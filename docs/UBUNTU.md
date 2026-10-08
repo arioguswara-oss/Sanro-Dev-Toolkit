@@ -1,6 +1,6 @@
 # Ubuntu Support
 
-Status: **V1.3.3 DONE_SOURCE / REAL UBUNTU RUNTIME VALIDATION IN PROGRESS**
+Status: **V1.3.3 DONE_SOURCE / UBUNTU RUNTIME VERIFIED**
 
 SANRO Dev Toolkit uses one PowerShell Core codebase on Windows and Ubuntu. Ubuntu uses PowerShell 7 (`pwsh`) plus the small `sanro-dev.sh` launcher. The goal is to keep the same handoff/status/context/check/test workflow when the SANRO agent moves from Rio's Windows laptop to an always-on Ubuntu VPS.
 
@@ -57,6 +57,8 @@ V1.3.x resolves configured commands per platform:
 
 V1.3.2 corrected configured argument forwarding and tool-version rendering. V1.3.3 additionally isolates child command stdout from the helper return value: command output is streamed to the console while callers receive only the scalar exit code. This is required for focused test output and reliable failure propagation on both Windows and Ubuntu.
 
+The legacy `npm.cmd` compatibility path was exercised successfully on the real Ubuntu 26.04.1 pilot VPS: the toolkit resolved `npm.cmd` to Linux `npm`, ran the disposable focused test, produced `tests 1 / pass 1 / fail 0`, and returned exit code `0`.
+
 New Node templates use canonical `npm`, but existing SANRO project configs do not need to be rewritten only for Linux compatibility.
 
 ## Ubuntu package behavior
@@ -69,23 +71,23 @@ A project's `minimumNodeMajor` is still authoritative. If Ubuntu's repository pr
 
 `./sanro-dev.sh snapshot` chooses the current user's home directory on either Windows or Linux and writes to `SANRO-Recovery` unless `-OutputDirectory` is provided.
 
-The archive remains source-only and excludes common secret/credential patterns.
+The archive remains source-only and excludes common secret/credential filename patterns. Real Ubuntu validation created a recovery ZIP successfully and a filename-level review of the observed archive found no `.env`, common SSH private-key, PEM/key, credential/secret JSON, token-like, or password-like names. This is filename-level exclusion evidence, not a semantic secret scanner for arbitrary file contents.
 
-## Safety boundary for the future SANRO Super Agent VPS
+## Safety boundary for the SANRO Super Agent VPS
 
-Ubuntu support does not grant permission to mutate production. The future VPS may automate source development, tests, Git/worktree operations, non-production builds, and authorized read-only monitoring. Production deploy, production DB mutation/migration, secret changes, runtime restart/reconfiguration, default-OFF activation, destructive Git actions, and LOCKED behavior changes remain Rio-approval gates.
+Ubuntu runtime verification does not grant permission to mutate production. The VPS may automate source development, tests, Git/worktree operations, non-production builds, and authorized read-only monitoring. Production deploy, production DB mutation/migration, secret changes, runtime restart/reconfiguration, default-OFF activation, destructive Git actions, and LOCKED behavior changes remain Rio-approval gates.
 
-## Validation gate
+## Runtime verification
 
-Real Ubuntu validation is being performed on the SANRO Super Agent VPS. Do not label the whole toolkit `UBUNTU RUNTIME VERIFIED` until all required commands have been exercised successfully.
+SANRO Dev Toolkit V1.3.3 is **UBUNTU RUNTIME VERIFIED** for the tested Ubuntu 26.04.1 LTS pilot-host baseline.
 
-The real Ubuntu validation must prove:
+Verified evidence includes:
 
-1. `bootstrap-ubuntu.sh --check` and explicit `--install` behavior on the selected Ubuntu LTS, including the supported universal `.deb` fallback when the repository package is not yet published.
-2. `./sanro-dev.sh help` launches through `pwsh`.
-3. `handoff`, `status`, `context`, `check`, focused `test`, and `snapshot` work against a disposable/non-production SANRO repository.
-4. Legacy `npm.cmd` project configuration works on Ubuntu through command resolution.
-5. No secret is copied into toolkit Git history or recovery output.
-6. GitHub Actions validates the cross-platform helper behavior on Ubuntu and Windows.
+1. `bootstrap-ubuntu.sh --check` and explicit `--install`, including the supported universal PowerShell `.deb` fallback when the apt repository did not expose `powershell` on the pilot host.
+2. `./sanro-dev.sh help` through `pwsh`.
+3. `handoff`, `status`, `context`, `check`, focused `test`, and `snapshot` against a disposable/non-production SANRO repository.
+4. Legacy `npm.cmd` project configuration resolving and running successfully on Ubuntu.
+5. Filename-level recovery archive review with no observed sensitive-name matches.
+6. GitHub Actions cross-platform helper validation on Ubuntu and Windows.
 
-Only after that evidence should the Ubuntu runtime be marked validated.
+This verification applies to the observed baseline and should not be generalized to every Linux distribution or future package/runtime version without further evidence.
