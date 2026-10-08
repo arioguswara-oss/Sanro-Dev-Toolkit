@@ -70,6 +70,16 @@ On Ubuntu, the toolkit resolved that configured command to Linux `npm` and execu
 
 This verifies the V1.3.x compatibility contract that existing SANRO project configs containing `npm.cmd` can run on Ubuntu without being rewritten only for platform naming differences.
 
+## Real SANRO Superadmin context-recovery evidence
+
+After Ubuntu runtime verification, the pilot VPS authenticated to GitHub using a dedicated machine SSH key and cloned the real `arioguswara-oss/Sanro-SuperAdmin` repository on the active development branch `codex/superadmin-v030-baseline-audit-20261004`.
+
+The Superadmin project adapter was updated so its `handoff` configuration points at the authoritative shared-memory files: `AGENTS.md`, `docs/SUPERADMIN_WORKBOARD.md`, `docs/CHECKPOINT_V0_3_8_WIP.md`, `SANRO_DEVELOPMENT_RULES.md`, and `SUPERADMIN_PROJECT_OPERATING_RULES.md`.
+
+On the VPS, `status` successfully reported the real Superadmin repository, branch/working tree, HEAD, and required tooling. `handoff` completed and emitted recent commit context plus the read-only next-action guidance. A scoped `context -Query "Proxy/TLS"` search then recovered current Proxy/TLS release-gate evidence from the real repository, including checkpoint/workboard/release-gate references and the fact that Proxy/TLS remains a separate hard deployment gate.
+
+This is the first verified real-project demonstration that the SANRO Super Agent VPS can recover SANRO Superadmin context directly from GitHub/shared-memory files without reconstructing the project history from chat. This evidence is read-only and does not prove Hosting/production state or grant mutation authority.
+
 ## Security baseline observed before toolkit validation
 
 The pilot VPS was prepared with a non-root `sanro` user using SSH public-key authentication and sudo. UFW is enabled with SSH allowed. Effective OpenSSH settings were verified to include:
@@ -86,6 +96,6 @@ A new root SSH login attempt was rejected. Existing root setup sessions were clo
 
 SANRO Dev Toolkit V1.3.3 is **UBUNTU RUNTIME VERIFIED** for the tested Ubuntu 26.04.1 LTS pilot-host baseline.
 
-Verified scope includes host bootstrap/fallback, launcher, project bootstrap, `handoff`, `status`, `context`, `check`, focused `test`, snapshot creation, filename-level recovery exclusion review, legacy `npm.cmd` resolution on Linux, and the cross-platform helper CI path.
+Verified scope includes host bootstrap/fallback, launcher, project bootstrap, `handoff`, `status`, `context`, `check`, focused `test`, snapshot creation, filename-level recovery exclusion review, legacy `npm.cmd` resolution on Linux, the cross-platform helper CI path, and real-project context recovery against SANRO Superadmin.
 
 This verification does **not** grant production mutation permission and does not prove every Linux distribution or future package version. Production deploys, production database mutation/migration, credential changes, runtime restart/reconfiguration, default-OFF activation, destructive Git actions, and LOCKED behavior changes remain explicit Rio approval gates.
