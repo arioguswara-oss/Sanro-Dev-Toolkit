@@ -1,6 +1,6 @@
 # Ubuntu Runtime Validation — 2026-10-08
 
-Status: **UBUNTU RUNTIME VERIFIED / V1.3.3**
+Status: **UBUNTU RUNTIME VERIFIED / V1.3.3 / CODEX VPS WORKER VERIFIED**
 
 This document records the first real Ubuntu runtime verification for SANRO Dev Toolkit V1.3.3 on the SANRO Super Agent pilot VPS.
 
@@ -15,8 +15,9 @@ This document records the first real Ubuntu runtime verification for SANRO Dev T
 - PowerShell: 7.6.6
 - Node.js observed in the disposable project: 22.22.1
 - npm observed in the disposable project: 9.2.0
+- Codex CLI observed on the pilot VPS: 0.161.0
 
-No VPS IP address, password, SSH private key, token, or production credential is recorded here.
+No VPS IP address, password, SSH private key, token, device code, or production credential is recorded here.
 
 ## Host foundation evidence
 
@@ -80,6 +81,29 @@ On the VPS, `status` successfully reported the real Superadmin repository, branc
 
 This is the first verified real-project demonstration that the SANRO Super Agent VPS can recover SANRO Superadmin context directly from GitHub/shared-memory files without reconstructing the project history from chat. This evidence is read-only and does not prove Hosting/production state or grant mutation authority.
 
+## Codex VPS worker evidence
+
+Codex CLI 0.161.0 was installed under the non-root `sanro` user and authenticated with ChatGPT device authorization. The authentication flow was completed without storing any device code or token in this repository.
+
+A dedicated Codex worktree was created at `/opt/sanro/worktrees/codex/superadmin` on branch `vps/codex-superadmin-ci-diagnostic-20261008`, isolated from the primary Superadmin working directory while sharing the same Git repository metadata.
+
+Codex was then validated against the real SANRO Superadmin project with a read-only instruction. It used the project rules/shared memory and reported:
+
+- local branch: `vps/codex-superadmin-ci-diagnostic-20261008`;
+- development branch: `codex/superadmin-v030-baseline-audit-20261004`;
+- HEAD: `8290e193eefd35f7220f1f8c53775d7b3d888bfd`, matching the verified remote head at the time of the run;
+- working tree: clean;
+- active CODEX-owned lane: `GitHub Actions zero-step diagnostic`;
+- status: `READY / READ_ONLY_DIAGNOSTIC`;
+- blocker: ChatGPT-side connector evidence exposed annotation counts but not the exact GitHub annotation bodies, so authenticated GitHub UI evidence was still required;
+- latest recorded evidence: run #1089 (`37805657759`) had Node20/MariaDB failures and Node24 cancellation with `steps=null` and two annotations per affected check;
+- next allowed action: inspect the sanitized GitHub diagnostic text only, without rerunning CI or changing Actions/billing/runner/settings;
+- reset context: sufficient for the assigned lane after reading the toolkit handoff, AGENTS/rules/workboard/checkpoint and referenced handoff document.
+
+Codex explicitly reported that it made no edit, commit, CI rerun, validation rerun, or production change. One exact `git ls-remote` command was approved as a read-only remote-HEAD check after the sandbox could not use the system SSH configuration; this approval did not grant mutation authority.
+
+This verifies the first real Codex worker takeover path on the SANRO Super Agent VPS: authenticated Codex + isolated worktree + GitHub/shared-memory recovery + ownership-aware read-only lane execution.
+
 ## Security baseline observed before toolkit validation
 
 The pilot VPS was prepared with a non-root `sanro` user using SSH public-key authentication and sudo. UFW is enabled with SSH allowed. Effective OpenSSH settings were verified to include:
@@ -94,8 +118,8 @@ A new root SSH login attempt was rejected. Existing root setup sessions were clo
 
 ## Verification conclusion
 
-SANRO Dev Toolkit V1.3.3 is **UBUNTU RUNTIME VERIFIED** for the tested Ubuntu 26.04.1 LTS pilot-host baseline.
+SANRO Dev Toolkit V1.3.3 is **UBUNTU RUNTIME VERIFIED** for the tested Ubuntu 26.04.1 LTS pilot-host baseline, and the pilot host now has a **CODEX VPS WORKER VERIFIED** read-only takeover path.
 
-Verified scope includes host bootstrap/fallback, launcher, project bootstrap, `handoff`, `status`, `context`, `check`, focused `test`, snapshot creation, filename-level recovery exclusion review, legacy `npm.cmd` resolution on Linux, the cross-platform helper CI path, and real-project context recovery against SANRO Superadmin.
+Verified scope includes host bootstrap/fallback, launcher, project bootstrap, `handoff`, `status`, `context`, `check`, focused `test`, snapshot creation, filename-level recovery exclusion review, legacy `npm.cmd` resolution on Linux, the cross-platform helper CI path, real-project context recovery against SANRO Superadmin, and the first isolated Codex worker handoff/read-only lane validation.
 
-This verification does **not** grant production mutation permission and does not prove every Linux distribution or future package version. Production deploys, production database mutation/migration, credential changes, runtime restart/reconfiguration, default-OFF activation, destructive Git actions, and LOCKED behavior changes remain explicit Rio approval gates.
+This verification does **not** grant production mutation permission and does not prove every Linux distribution or future package version. Production deploys, production database mutation/migration, credential changes, runtime restart/reconfiguration, default-OFF activation, destructive Git actions, Actions/billing/runner changes, and LOCKED behavior changes remain explicit Rio approval gates.
