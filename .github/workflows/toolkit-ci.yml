@@ -72,7 +72,7 @@ jobs:
             throw "Unexpected CI platform: $platform"
           }
 
-      - name: Validate configured command argument forwarding
+      - name: Validate configured command forwarding and output isolation
         shell: pwsh
         run: |
           . ./tools/common.ps1
@@ -82,7 +82,7 @@ jobs:
           @'
           param([string]$First, [string]$Second)
           if ($First -ne 'alpha' -or $Second -ne 'beta') { exit 17 }
-          Write-Host 'ARG_FORWARDING_OK'
+          Write-Output 'ARG_FORWARDING_OK'
           '@ | Set-Content -LiteralPath $probe
           $cfg = [pscustomobject]@{
             workingDirectory = '.'
@@ -90,7 +90,16 @@ jobs:
             args = @('-NoProfile', '-File', $probe, 'alpha', 'beta')
           }
           $code = Invoke-SanroConfiguredCommand $PWD $cfg
+          if ($code -isnot [int]) { throw "Configured command returned non-scalar exit result: $($code.GetType().FullName)" }
           if ($code -ne 0) { throw "Configured command forwarding failed with exit $code" }
+
+          $failCfg = [pscustomobject]@{
+            workingDirectory = '.'
+            command = 'pwsh'
+            args = @('-NoProfile', '-Command', 'exit 17')
+          }
+          $failureCode = Invoke-SanroConfiguredCommand $PWD $failCfg
+          if ($failureCode -ne 17) { throw "Configured command exit propagation failed: $failureCode" }
 
       - name: Ubuntu launcher and host check
         if: runner.os == 'Linux'

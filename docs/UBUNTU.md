@@ -1,6 +1,6 @@
 # Ubuntu Support
 
-Status: **V1.3.1 DONE_SOURCE / REAL UBUNTU RUNTIME VALIDATION IN PROGRESS**
+Status: **V1.3.3 DONE_SOURCE / REAL UBUNTU RUNTIME VALIDATION IN PROGRESS**
 
 SANRO Dev Toolkit uses one PowerShell Core codebase on Windows and Ubuntu. Ubuntu uses PowerShell 7 (`pwsh`) plus the small `sanro-dev.sh` launcher. The goal is to keep the same handoff/status/context/check/test workflow when the SANRO agent moves from Rio's Windows laptop to an always-on Ubuntu VPS.
 
@@ -30,7 +30,7 @@ cd Sanro-Dev-Toolkit
 
 `--check` is non-installing. `--install` is an explicit mutating action: it installs base OS packages and PowerShell 7 using Microsoft-supported sources.
 
-The installer prefers Microsoft's Ubuntu package repository. If that repository is registered successfully but does not yet expose the `powershell` package for the current Ubuntu LTS, V1.3.1 falls back to Microsoft's official universal PowerShell `.deb` published from the PowerShell GitHub release. The fallback defaults to the pinned LTS release used by this toolkit and can be explicitly overridden with `SANRO_POWERSHELL_VERSION` when a reviewed update is required.
+The installer prefers Microsoft's Ubuntu package repository. If that repository is registered successfully but does not yet expose the `powershell` package for the current Ubuntu LTS, V1.3.x falls back to Microsoft's official universal PowerShell `.deb` published from the PowerShell GitHub release. The fallback defaults to the pinned release used by this toolkit and can be explicitly overridden with `SANRO_POWERSHELL_VERSION` when a reviewed update is required.
 
 ## Project bootstrap
 
@@ -55,6 +55,8 @@ V1.3.x resolves configured commands per platform:
 - Ubuntu/Linux: legacy project configs that still contain `npm.cmd` resolve to `npm`.
 - Ubuntu's `fd-find` package exposes `fdfind`; the toolkit accepts it as the Linux implementation of configured tool `fd`.
 
+V1.3.2 corrected configured argument forwarding and tool-version rendering. V1.3.3 additionally isolates child command stdout from the helper return value: command output is streamed to the console while callers receive only the scalar exit code. This is required for focused test output and reliable failure propagation on both Windows and Ubuntu.
+
 New Node templates use canonical `npm`, but existing SANRO project configs do not need to be rewritten only for Linux compatibility.
 
 ## Ubuntu package behavior
@@ -77,12 +79,13 @@ Ubuntu support does not grant permission to mutate production. The future VPS ma
 
 Real Ubuntu validation is being performed on the SANRO Super Agent VPS. Do not label the whole toolkit `UBUNTU RUNTIME VERIFIED` until all required commands have been exercised successfully.
 
-The real Ubuntu validation should prove:
+The real Ubuntu validation must prove:
 
 1. `bootstrap-ubuntu.sh --check` and explicit `--install` behavior on the selected Ubuntu LTS, including the supported universal `.deb` fallback when the repository package is not yet published.
 2. `./sanro-dev.sh help` launches through `pwsh`.
 3. `handoff`, `status`, `context`, `check`, focused `test`, and `snapshot` work against a disposable/non-production SANRO repository.
 4. Legacy `npm.cmd` project configuration works on Ubuntu through command resolution.
 5. No secret is copied into toolkit Git history or recovery output.
+6. GitHub Actions validates the cross-platform helper behavior on Ubuntu and Windows.
 
 Only after that evidence should the Ubuntu runtime be marked validated.

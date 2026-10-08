@@ -91,8 +91,10 @@ function Invoke-SanroConfiguredCommand([string]$ProjectRoot, $CommandConfig) {
     $commandArgs = @($CommandConfig.args | ForEach-Object { [string]$_ })
     Push-Location $workDir
     try {
-        & $command @commandArgs
-        return $LASTEXITCODE
+        & $command @commandArgs | ForEach-Object { Write-Host $_ }
+        $exitCode = $LASTEXITCODE
+        if ($null -eq $exitCode) { $exitCode = 0 }
+        return [int]$exitCode
     }
     finally { Pop-Location }
 }
