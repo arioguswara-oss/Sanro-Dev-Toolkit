@@ -1,6 +1,6 @@
 # Ubuntu Support
 
-Status: **V1.3.0 DONE_SOURCE / REAL UBUNTU RUNTIME VALIDATION PENDING**
+Status: **V1.3.1 DONE_SOURCE / REAL UBUNTU RUNTIME VALIDATION IN PROGRESS**
 
 SANRO Dev Toolkit uses one PowerShell Core codebase on Windows and Ubuntu. Ubuntu uses PowerShell 7 (`pwsh`) plus the small `sanro-dev.sh` launcher. The goal is to keep the same handoff/status/context/check/test workflow when the SANRO agent moves from Rio's Windows laptop to an always-on Ubuntu VPS.
 
@@ -28,7 +28,9 @@ cd Sanro-Dev-Toolkit
 ./bootstrap-ubuntu.sh --install
 ```
 
-`--check` is non-installing. `--install` is an explicit mutating action: it installs base OS packages and PowerShell 7 using Microsoft's Ubuntu package repository. If Microsoft's repository is not available for the Ubuntu release, the script stops and asks for a supported manual PowerShell installation instead of guessing.
+`--check` is non-installing. `--install` is an explicit mutating action: it installs base OS packages and PowerShell 7 using Microsoft-supported sources.
+
+The installer prefers Microsoft's Ubuntu package repository. If that repository is registered successfully but does not yet expose the `powershell` package for the current Ubuntu LTS, V1.3.1 falls back to Microsoft's official universal PowerShell `.deb` published from the PowerShell GitHub release. The fallback defaults to the pinned LTS release used by this toolkit and can be explicitly overridden with `SANRO_POWERSHELL_VERSION` when a reviewed update is required.
 
 ## Project bootstrap
 
@@ -47,7 +49,7 @@ Without `-InstallMissing`, the toolkit only checks required/optional tools befor
 
 ## Cross-platform command compatibility
 
-V1.3.0 resolves configured commands per platform:
+V1.3.x resolves configured commands per platform:
 
 - Windows: canonical `npm`/`npx` resolve to `npm.cmd`/`npx.cmd`.
 - Ubuntu/Linux: legacy project configs that still contain `npm.cmd` resolve to `npm`.
@@ -63,7 +65,7 @@ A project's `minimumNodeMajor` is still authoritative. If Ubuntu's repository pr
 
 ## Recovery snapshot
 
-`./sanro-dev.sh snapshot` now chooses the current user's home directory on either Windows or Linux and writes to `SANRO-Recovery` unless `-OutputDirectory` is provided.
+`./sanro-dev.sh snapshot` chooses the current user's home directory on either Windows or Linux and writes to `SANRO-Recovery` unless `-OutputDirectory` is provided.
 
 The archive remains source-only and excludes common secret/credential patterns.
 
@@ -73,11 +75,11 @@ Ubuntu support does not grant permission to mutate production. The future VPS ma
 
 ## Validation gate
 
-This source baseline was prepared in GitHub without a real SANRO Ubuntu VPS attached to this ChatGPT session. Do not label it `HOSTING VERIFIED` or `UBUNTU RUNTIME VERIFIED` yet.
+Real Ubuntu validation is being performed on the SANRO Super Agent VPS. Do not label the whole toolkit `UBUNTU RUNTIME VERIFIED` until all required commands have been exercised successfully.
 
-First real Ubuntu validation should prove:
+The real Ubuntu validation should prove:
 
-1. `bootstrap-ubuntu.sh --check` and explicit `--install` behavior on the selected Ubuntu LTS.
+1. `bootstrap-ubuntu.sh --check` and explicit `--install` behavior on the selected Ubuntu LTS, including the supported universal `.deb` fallback when the repository package is not yet published.
 2. `./sanro-dev.sh help` launches through `pwsh`.
 3. `handoff`, `status`, `context`, `check`, focused `test`, and `snapshot` work against a disposable/non-production SANRO repository.
 4. Legacy `npm.cmd` project configuration works on Ubuntu through command resolution.
