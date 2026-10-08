@@ -2,18 +2,19 @@
 
 Portable development, recovery, and cross-agent handoff toolkit for SANRO projects.
 
-The toolkit is intentionally project-agnostic. A project describes its own working directories, required tools, dependency install commands, test runner, and handoff/shared-memory paths in `sanro-dev.project.json`; the reusable PowerShell scripts stay in this repository.
+The toolkit is intentionally project-agnostic and AI-provider-independent. A project describes its own working directories, required tools, dependency install commands, test runner, and handoff/shared-memory paths in `sanro-dev.project.json`; the reusable scripts stay in this repository.
 
 ## Goals
 
 - Recover a development machine quickly after device loss or replacement.
 - Reuse the same safe workflow across SANRO Superadmin, POS, Stock, Ticket, WordPress/plugin/theme, and future projects.
-- Make new SANRO repositories Codex-ready from the first commit.
-- Make ChatGPT <-> Codex takeover cheap after reset/quota loss.
+- Make new SANRO repositories agent-ready from the first commit.
+- Make ChatGPT <-> Codex or other-agent takeover cheap after reset/quota loss.
 - Prefer focused search/test loops before broad scans or full regression.
 - Keep credentials and production secrets out of Git and recovery archives.
+- Run the same core workflow on Windows today and Ubuntu Server for the future SANRO Super Agent VPS.
 
-## Quick start on a new Windows machine
+## Windows quick start
 
 Install Git first if necessary:
 
@@ -39,25 +40,55 @@ For an existing SANRO project that already contains `sanro-dev.project.json`:
 .\sanro-dev.ps1 test      -ProjectRoot "C:\path\to\project"
 ```
 
+## Ubuntu quick start
+
+V1.3.0 adds an Ubuntu path for the future always-on SANRO agent environment while keeping the PowerShell Core logic shared with Windows.
+
+```bash
+sudo apt-get update
+sudo apt-get install -y git
+git clone https://github.com/arioguswara-oss/Sanro-Dev-Toolkit.git
+cd Sanro-Dev-Toolkit
+./bootstrap-ubuntu.sh --check
+./bootstrap-ubuntu.sh --install
+```
+
+Then use the Linux launcher:
+
+```bash
+./sanro-dev.sh bootstrap -ProjectRoot /opt/sanro/projects/app -InstallMissing
+./sanro-dev.sh handoff   -ProjectRoot /opt/sanro/projects/app
+./sanro-dev.sh status    -ProjectRoot /opt/sanro/projects/app
+./sanro-dev.sh context   -ProjectRoot /opt/sanro/projects/app -Query subscription
+./sanro-dev.sh check     -ProjectRoot /opt/sanro/projects/app
+./sanro-dev.sh test      -ProjectRoot /opt/sanro/projects/app -Filter subscription
+```
+
+`bootstrap-ubuntu.sh --install` explicitly changes the Ubuntu host by installing prerequisites and PowerShell. The normal toolkit safety rules still apply; Ubuntu support does not authorize production changes.
+
+See `docs/UBUNTU.md` for the source/runtime validation boundary and VPS-oriented guidance.
+
 ## Start a new project
 
-For a normal generic project:
+For a normal generic project on Windows:
 
 ```powershell
 .\sanro-dev.ps1 init -ProjectRoot "C:\path\to\project" -Template node -ProjectName "My Project"
 ```
 
-For a new SANRO Node project that should be Codex-ready from the start:
+For a new SANRO Node project:
 
 ```powershell
 .\sanro-dev.ps1 init -ProjectRoot "C:\path\to\project" -Template sanro-node -ProjectName "SANRO App"
 ```
 
-For a new SANRO WordPress/plugin/theme project:
+Ubuntu uses the same templates:
 
-```powershell
-.\sanro-dev.ps1 init -ProjectRoot "C:\path\to\project" -Template sanro-wordpress -ProjectName "SANRO Plugin"
+```bash
+./sanro-dev.sh init -ProjectRoot /opt/sanro/projects/app -Template sanro-node -ProjectName "SANRO App"
 ```
+
+For a new SANRO WordPress/plugin/theme project, use template `sanro-wordpress`.
 
 SANRO templates create `sanro-dev.project.json` and also create a default `AGENTS.md` when one does not already exist. Existing `AGENTS.md` is preserved.
 
@@ -68,15 +99,25 @@ Available templates:
 ## Commands
 
 ```text
-sanro-dev.ps1 init       Create sanro-dev.project.json from a template
-sanro-dev.ps1 bootstrap  Check/install supported tools and restore dependencies
-sanro-dev.ps1 status     Show repository/branch/working tree/tool status
-sanro-dev.ps1 handoff    Show concise branch/HEAD/shared-memory/change/recent-commit context
-sanro-dev.ps1 context    Fast literal filename/content search with ripgrep
-sanro-dev.ps1 check      Diff hygiene + syntax checks for changed files
-sanro-dev.ps1 test       Focused or full configured tests
-sanro-dev.ps1 snapshot   Create an offline recovery ZIP of this toolkit
+sanro-dev.ps1 / sanro-dev.sh
+
+init       Create sanro-dev.project.json from a template
+bootstrap  Check/install supported tools and restore dependencies
+status     Show repository/branch/working tree/platform/tool status
+handoff    Show concise branch/HEAD/shared-memory/change/recent-commit context
+context    Fast literal filename/content search with ripgrep
+check      Diff hygiene + syntax checks for changed files
+test       Focused or full configured tests
+snapshot   Create an offline recovery ZIP of this toolkit
 ```
+
+## Cross-platform command resolution
+
+Project configuration should prefer canonical command names such as `npm`. On Windows the toolkit resolves `npm` and `npx` to their `.cmd` launchers. On Ubuntu/Linux it also accepts older SANRO configs that contain `npm.cmd` and resolves them back to `npm`.
+
+Ubuntu's `fd-find` package exposes `fdfind`; the toolkit recognizes it as the Linux implementation of configured tool `fd`.
+
+This allows existing project adapters to move between Windows and Ubuntu without duplicating project rules only for command-name differences.
 
 ## Cross-agent handoff
 
@@ -95,17 +136,13 @@ For long-running SANRO projects, add a `handoff` object to `sanro-dev.project.js
 }
 ```
 
-Then run:
-
-```powershell
-.\sanro-dev.ps1 handoff -ProjectRoot "C:\path\to\project"
-```
+Then run `handoff` using either launcher for the current OS.
 
 The handoff command is read-only. It summarizes branch, HEAD, upstream presence, working-tree change count, configured shared-memory files, safe changed paths, and recent commit subjects. Sensitive-looking paths are redacted. It does not read file contents and does not prove hosting/production state.
 
-This gives ChatGPT or Codex a compact re-entry point after reset without forcing a broad repository audit.
+This gives ChatGPT, Codex, a local LLM, or another compatible agent a compact re-entry point after reset without forcing a broad repository audit.
 
-## Standard Codex workflow
+## Standard agent workflow
 
 For SANRO repositories the default efficient loop is:
 
@@ -121,6 +158,8 @@ See `docs/SANRO_PROJECT_STANDARD.md` for the baseline expected in new SANRO repo
 
 Never store `.env`, database passwords, API/OAuth secrets, session secrets, hosting credentials, SSH private keys, collector credentials, or sensitive database dumps in this repository or generated recovery ZIPs. Restore secrets separately from an encrypted backup/secret manager.
 
+The toolkit is not a production-approval mechanism. Production deploy, DB mutation/migration, credential changes, restart/reconfiguration, destructive Git operations, default-OFF activation, and LOCKED behavior changes remain subject to project-specific approval rules.
+
 See `SECURITY.md` and `docs/RECOVERY.md`.
 
 ## Existing SANRO projects
@@ -129,6 +168,10 @@ Existing repositories can adopt the toolkit incrementally. Keep stricter existin
 
 The Superadmin, POS/Stock, and Ticket examples are under `examples/`; project-specific paths should be verified against each repository before adoption.
 
+## Ubuntu validation status
+
+V1.3.0 is a **source baseline** for Ubuntu. It must still be exercised on a real Ubuntu SANRO machine/VPS before anyone claims `UBUNTU RUNTIME VERIFIED`, `HOSTING VERIFIED`, or equivalent runtime evidence.
+
 ## Origin
 
-The first toolkit scripts were proven in `arioguswara-oss/Sanro-SuperAdmin`. This standalone repository makes the recovery/tooling/handoff layer reusable without coupling it to one application repository.
+The first toolkit scripts were proven in `arioguswara-oss/Sanro-SuperAdmin`. This standalone repository makes the recovery/tooling/handoff layer reusable without coupling it to one application repository or one AI provider.

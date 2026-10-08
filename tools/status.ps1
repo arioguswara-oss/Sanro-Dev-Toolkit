@@ -9,7 +9,11 @@ $failed = $false
 Push-Location $root
 try {
     Write-Host 'SANRO DEV STATUS'
-    Write-Host ("Project: {0}" -f $config.project)
+    Write-Host ("Project : {0}" -f $config.project)
+    Write-Host ("Platform: {0}" -f (Get-SanroPlatform))
+    if ((Get-SanroPlatform) -eq 'linux') {
+        Write-Host ("Linux   : {0}" -f (Get-SanroLinuxDistribution))
+    }
     Write-Host '[Repository]'
     git rev-parse --show-toplevel
     if ($LASTEXITCODE -ne 0) { throw 'Cannot read repository root.' }

@@ -1,5 +1,21 @@
 $ErrorActionPreference = 'Stop'
 
+function Get-SanroPlatform {
+    if ($env:OS -eq 'Windows_NT' -or $IsWindows) { return 'windows' }
+    if ($IsLinux) { return 'linux' }
+    if ($IsMacOS) { return 'macos' }
+    return 'unknown'
+}
+
+function Get-SanroLinuxDistribution {
+    if ((Get-SanroPlatform) -ne 'linux') { return '' }
+    $path = '/etc/os-release'
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return '' }
+    $line = Get-Content -LiteralPath $path | Where-Object { $_ -match '^ID=' } | Select-Object -First 1
+    if (-not $line) { return '' }
+    return (($line -replace '^ID=', '').Trim().Trim('"').Trim("'")).ToLowerInvariant()
+}
+
 function Resolve-SanroProjectRoot([string]$ProjectRoot) {
     if ([string]::IsNullOrWhiteSpace($ProjectRoot)) { $ProjectRoot = (Get-Location).Path }
     $resolved = Resolve-Path -LiteralPath $ProjectRoot -ErrorAction Stop
@@ -20,15 +36,34 @@ function Get-SanroProjectConfig([string]$ProjectRoot) {
 }
 
 function Get-SanroToolCommand([string]$Name) {
-    switch ($Name.ToLowerInvariant()) {
-        'npm' { return 'npm.cmd' }
-        default { return $Name }
+    if ([string]::IsNullOrWhiteSpace($Name)) { return $Name }
+
+    $platform = Get-SanroPlatform
+    $candidate = $Name.Trim()
+
+    if ($platform -eq 'windows') {
+        switch ($candidate.ToLowerInvariant()) {
+            'npm' { return 'npm.cmd' }
+            'npx' { return 'npx.cmd' }
+            default { return $candidate }
+        }
     }
+
+    if ($candidate.EndsWith('.cmd', [System.StringComparison]::OrdinalIgnoreCase)) {
+        $candidate = $candidate.Substring(0, $candidate.Length - 4)
+    }
+
+    if ($platform -eq 'linux' -and $candidate -ieq 'fd') {
+        if ($null -ne (Get-Command 'fd' -ErrorAction SilentlyContinue)) { return 'fd' }
+        if ($null -ne (Get-Command 'fdfind' -ErrorAction SilentlyContinue)) { return 'fdfind' }
+    }
+
+    return $candidate
 }
 
 function Test-SanroCommand([string]$Name) {
     $command = Get-SanroToolCommand $Name
-    return $null -ne (Get-Command $command -ErrorAction SilentlyContinue)
+    return -not [string]::IsNullOrWhiteSpace($command) -and $null -ne (Get-Command $command -ErrorAction SilentlyContinue)
 }
 
 function Invoke-SanroConfiguredCommand([string]$ProjectRoot, $CommandConfig) {
@@ -39,8 +74,12 @@ function Invoke-SanroConfiguredCommand([string]$ProjectRoot, $CommandConfig) {
     if (-not (Test-Path -LiteralPath $workDir -PathType Container)) {
         throw "Configured working directory not found: $working"
     }
-    $command = [string]$CommandConfig.command
-    if ([string]::IsNullOrWhiteSpace($command)) { throw 'Configured command name is empty.' }
+    $configuredCommand = [string]$CommandConfig.command
+    if ([string]::IsNullOrWhiteSpace($configuredCommand)) { throw 'Configured command name is empty.' }
+    $command = Get-SanroToolCommand $configuredCommand
+    if ($null -eq (Get-Command $command -ErrorAction SilentlyContinue)) {
+        throw "Configured command unavailable on $(Get-SanroPlatform): $configuredCommand (resolved: $command)"
+    }
     $args = @($CommandConfig.args)
     Push-Location $workDir
     try {

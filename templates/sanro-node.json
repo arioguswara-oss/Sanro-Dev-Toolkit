@@ -9,13 +9,13 @@
     {
       "name": "npm ci",
       "workingDirectory": ".",
-      "command": "npm.cmd",
+      "command": "npm",
       "args": ["ci", "--no-audit", "--no-fund"]
     }
   ],
   "fullTest": {
     "workingDirectory": ".",
-    "command": "npm.cmd",
+    "command": "npm",
     "args": ["test"]
   },
   "focusedTest": {

@@ -18,6 +18,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $toolsRoot = Join-Path $PSScriptRoot 'tools'
+. (Join-Path $toolsRoot 'common.ps1')
 
 function Invoke-Child([string]$ScriptName, [hashtable]$Arguments) {
     $script = Join-Path $toolsRoot $ScriptName
@@ -38,10 +39,24 @@ switch ($Command) {
         }
     }
     'bootstrap' {
-        Invoke-Child 'bootstrap-windows.ps1' @{
-            ProjectRoot = $ProjectRoot
-            InstallMissing = $InstallMissing
-            SkipDependencies = $SkipDependencies
+        switch (Get-SanroPlatform) {
+            'windows' {
+                Invoke-Child 'bootstrap-windows.ps1' @{
+                    ProjectRoot = $ProjectRoot
+                    InstallMissing = $InstallMissing
+                    SkipDependencies = $SkipDependencies
+                }
+            }
+            'linux' {
+                Invoke-Child 'bootstrap-ubuntu.ps1' @{
+                    ProjectRoot = $ProjectRoot
+                    InstallMissing = $InstallMissing
+                    SkipDependencies = $SkipDependencies
+                }
+            }
+            default {
+                throw "bootstrap is currently supported on Windows and Ubuntu Linux only. Platform: $(Get-SanroPlatform)"
+            }
         }
     }
     'status' {
@@ -75,12 +90,16 @@ SANRO Dev Toolkit
 Commands:
   init       Create sanro-dev.project.json from a template
   bootstrap  Check/install supported tools and restore dependencies
-  status     Show repository, branch, working tree, and tool state
+  status     Show repository, branch, working tree, platform, and tool state
   handoff    Show concise cross-agent recovery/handoff context
   context    Fast literal context search; requires -Query
   check      Diff hygiene + changed-file syntax checks
   test       Run focused tests with -Filter, or configured full tests
   snapshot   Export a source-only offline recovery ZIP
+
+Platforms:
+  Windows PowerShell / PowerShell 7
+  Ubuntu Linux via PowerShell 7 (pwsh); use ./sanro-dev.sh as the launcher
 
 Templates:
   generic, node, wordpress, sanro-node, sanro-wordpress
@@ -88,12 +107,16 @@ Templates:
 SANRO templates also create a default AGENTS.md when one does not already exist.
 Existing AGENTS.md is preserved.
 
-Examples:
+Windows examples:
   .\sanro-dev.ps1 init -ProjectRoot C:\work\app -Template sanro-node -ProjectName "SANRO App"
   .\sanro-dev.ps1 bootstrap -ProjectRoot C:\work\app -InstallMissing
   .\sanro-dev.ps1 handoff -ProjectRoot C:\work\app
-  .\sanro-dev.ps1 context -ProjectRoot C:\work\app -Query subscription
-  .\sanro-dev.ps1 test -ProjectRoot C:\work\app -Filter subscription
+
+Ubuntu examples:
+  ./sanro-dev.sh init -ProjectRoot /opt/sanro/projects/app -Template sanro-node -ProjectName "SANRO App"
+  ./sanro-dev.sh bootstrap -ProjectRoot /opt/sanro/projects/app -InstallMissing
+  ./sanro-dev.sh handoff -ProjectRoot /opt/sanro/projects/app
+  ./sanro-dev.sh context -ProjectRoot /opt/sanro/projects/app -Query subscription
 '@
         exit 0
     }

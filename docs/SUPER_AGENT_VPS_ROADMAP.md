@@ -3,6 +3,8 @@
 Status: FUTURE ROADMAP / NOT YET PROVISIONED
 Owner / final approver: Rio
 
+Ubuntu toolkit source baseline: **V1.3.0 DONE_SOURCE / REAL UBUNTU RUNTIME VALIDATION PENDING**
+
 ## Direction
 
 SANRO Dev Toolkit is being validated first on Rio's Windows laptop as the pilot environment for ChatGPT <-> Codex handoff, scoped development, focused testing, remote evidence, and recovery after reset/quota loss.
@@ -32,6 +34,8 @@ Preferred family: Ubuntu Server LTS x86_64.
 
 Do not hard-lock an exact Ubuntu release years in advance. At provisioning time choose the current supported LTS version that is compatible with the required agent/runtime stack.
 
+SANRO Dev Toolkit V1.3.0 now contains the Ubuntu source foundation: a Bash launcher, explicit Ubuntu host bootstrap, Ubuntu project bootstrap, platform-aware command resolution, and cross-platform recovery path handling. This is source evidence only until exercised on a real Ubuntu host.
+
 ## Pilot-to-VPS gate
 
 Do not provision the VPS merely because the roadmap exists. First prove on the Windows laptop that:
@@ -43,6 +47,8 @@ Do not provision the VPS merely because the roadmap exists. First prove on the W
 5. Parallel lanes/worktrees do not collide.
 6. Important work leaves durable remote evidence.
 7. The workflow materially reduces context-recovery and quota waste.
+
+Before the Linux VPS becomes an operational agent environment, also validate V1.3.0 on a disposable/non-production Ubuntu machine: host bootstrap, launcher, handoff, status, context, check, focused test, snapshot, and compatibility with legacy `npm.cmd` project configuration.
 
 After these gates are demonstrated, migrate the same workflow to Linux rather than redesigning it from scratch.
 
@@ -61,6 +67,7 @@ The Super Agent environment should eventually support:
 - focused tests and end-of-batch regression
 - commit/push evidence and handoff reports
 - overnight/periodic engineering summaries
+- cloud AI workers and optional local LLM workers behind a future SANRO AI Supervisor
 
 ## Safety boundary
 
@@ -76,15 +83,17 @@ The VPS must not become an unrestricted production root account.
 
 Start with one active builder/worker plus lightweight monitoring. Scale resources only when measured CPU/RAM/disk/I/O or parallel-agent demand justifies it.
 
-Possible future evolution:
+Current path:
 
 Laptop Windows pilot
 -> Codex-practiced SANRO Dev Toolkit
 -> reliable ChatGPT <-> Codex takeover
--> cross-platform/Linux toolkit support
+-> **V1.3.0 Ubuntu source foundation DONE_SOURCE**
+-> real Ubuntu runtime validation
 -> Contabo Cloud VPS 4 Singapore pilot
 -> one always-on SANRO agent
 -> supervisor/task claiming/worktree isolation
--> multiple specialized agents when proven safe
+-> optional local LLM fallback for suitable tasks
+-> multiple specialized/provider-independent agents when proven safe
 
 This document records direction only. VPS purchase/provisioning, credentials, and any production access remain explicit future decisions requiring Rio approval.

@@ -1,8 +1,16 @@
 param(
-    [string]$OutputDirectory = (Join-Path $env:USERPROFILE 'SANRO-Recovery')
+    [string]$OutputDirectory = ''
 )
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+
+if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
+    $userHome = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+    if ([string]::IsNullOrWhiteSpace($userHome)) { $userHome = $HOME }
+    if ([string]::IsNullOrWhiteSpace($userHome)) { $userHome = [IO.Path]::GetTempPath() }
+    $OutputDirectory = Join-Path $userHome 'SANRO-Recovery'
+}
+
 $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $stage = Join-Path ([IO.Path]::GetTempPath()) ('sanro-dev-toolkit-' + [guid]::NewGuid().ToString('N'))
 $archive = Join-Path $OutputDirectory ("SANRO-Dev-Toolkit-Recovery-{0}.zip" -f $stamp)
