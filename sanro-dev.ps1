@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet('init','bootstrap','status','handoff','context','check','test','snapshot','help')]
+    [ValidateSet('init','bootstrap','status','handoff','context','check','test','lint','build','verify','release-check','ci','snapshot','help')]
     [string]$Command,
 
     [string]$ProjectRoot = (Get-Location).Path,
@@ -13,6 +13,7 @@ param(
     [switch]$InstallMissing,
     [switch]$SkipDependencies,
     [switch]$Force,
+    [switch]$Json,
     [string]$OutputDirectory = ''
 )
 
@@ -27,6 +28,14 @@ function Invoke-Child([string]$ScriptName, [hashtable]$Arguments) {
     }
     & $script @Arguments
     exit $LASTEXITCODE
+}
+
+function Invoke-CiMode([string]$Mode) {
+    Invoke-Child 'ci.ps1' @{
+        ProjectRoot = $ProjectRoot
+        Mode = $Mode
+        Json = $Json
+    }
 }
 
 switch ($Command) {
@@ -78,6 +87,11 @@ switch ($Command) {
     'test' {
         Invoke-Child 'test.ps1' @{ ProjectRoot = $ProjectRoot; Filter = $Filter }
     }
+    'lint' { Invoke-CiMode 'lint' }
+    'build' { Invoke-CiMode 'build' }
+    'verify' { Invoke-CiMode 'verify' }
+    'release-check' { Invoke-CiMode 'release-check' }
+    'ci' { Invoke-CiMode 'ci' }
     'snapshot' {
         $args = @{}
         if (-not [string]::IsNullOrWhiteSpace($OutputDirectory)) { $args.OutputDirectory = $OutputDirectory }
@@ -88,14 +102,21 @@ switch ($Command) {
 SANRO Dev Toolkit
 
 Commands:
-  init       Create sanro-dev.project.json from a template
-  bootstrap  Check/install supported tools and restore dependencies
-  status     Show repository, branch, working tree, platform, and tool state
-  handoff    Show concise cross-agent recovery/handoff context
-  context    Fast literal context search; requires -Query
-  check      Diff hygiene + changed-file syntax checks
-  test       Run focused tests with -Filter, or configured full tests
-  snapshot   Export a source-only offline recovery ZIP
+  init          Create sanro-dev.project.json from a template
+  bootstrap     Check/install supported tools and restore dependencies
+  status        Show repository, branch, working tree, platform, and tool state
+  handoff       Show concise cross-agent recovery/handoff context
+  context       Fast literal context search; requires -Query
+  check         Diff hygiene + changed-file syntax checks
+  test          Run focused tests with -Filter, or configured full tests
+  lint          Run manifest-driven lint stage
+  build         Run manifest-driven build stage
+  verify        Run manifest-driven verification/security stage
+  release-check Run CI pipeline plus release/artifact/production-safety gates
+  ci            Run the local/VPS authoritative deterministic CI pipeline
+  snapshot      Export a source-only offline recovery ZIP
+
+CI commands accept -Json for machine-readable output. Detailed reports are also written under the configured .sanro-ci directory.
 
 Platforms:
   Windows PowerShell / PowerShell 7
@@ -109,14 +130,13 @@ Existing AGENTS.md is preserved.
 
 Windows examples:
   .\sanro-dev.ps1 init -ProjectRoot C:\work\app -Template sanro-node -ProjectName "SANRO App"
-  .\sanro-dev.ps1 bootstrap -ProjectRoot C:\work\app -InstallMissing
-  .\sanro-dev.ps1 handoff -ProjectRoot C:\work\app
+  .\sanro-dev.ps1 ci -ProjectRoot C:\work\app
+  .\sanro-dev.ps1 release-check -ProjectRoot C:\work\app -Json
 
 Ubuntu examples:
   ./sanro-dev.sh init -ProjectRoot /opt/sanro/projects/app -Template sanro-node -ProjectName "SANRO App"
-  ./sanro-dev.sh bootstrap -ProjectRoot /opt/sanro/projects/app -InstallMissing
-  ./sanro-dev.sh handoff -ProjectRoot /opt/sanro/projects/app
-  ./sanro-dev.sh context -ProjectRoot /opt/sanro/projects/app -Query subscription
+  ./sanro-dev.sh ci -ProjectRoot /opt/sanro/projects/app
+  ./sanro-dev.sh release-check -ProjectRoot /opt/sanro/projects/app -Json
 '@
         exit 0
     }
