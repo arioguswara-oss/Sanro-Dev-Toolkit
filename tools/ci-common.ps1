@@ -27,6 +27,10 @@ function Test-SanroCiEnvironmentName([string]$Name) {
     return $Name -match '^[A-Za-z_][A-Za-z0-9_]*$'
 }
 
+function Test-SanroCiSensitiveEnvironmentName([string]$Name) {
+    return $Name -match '(?i)(password|passwd|pwd|token|secret|credential|api[_-]?key|private[_-]?key|control[_-]?plane[_-]?key)$'
+}
+
 function Get-SanroCiEnvironmentMetadata($CommandConfig) {
     $literalKeys = @()
     if ($null -ne $CommandConfig.environment) {
@@ -57,7 +61,9 @@ function Get-SanroCiEnvironmentPlan($CommandConfig) {
             }
             $text = if ($null -eq $value) { '' } else { [string]$value }
             $literal[$name] = $text
-            if ($text.Length -ge 4) { $sensitiveValues += $text }
+            if ((Test-SanroCiSensitiveEnvironmentName $name) -and $text.Length -ge 4) {
+                $sensitiveValues += $text
+            }
         }
     }
 
