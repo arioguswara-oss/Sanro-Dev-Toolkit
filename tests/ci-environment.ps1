@@ -18,12 +18,12 @@ try {
     [Environment]::SetEnvironmentVariable($literalName, 'original-value', 'Process')
 
     $script = Join-Path $temp 'probe.ps1'
-    @"
-if (`$env:$literalName -ne '$literalValue') { exit 31 }
-if (`$env:$requiredName -ne '$requiredValue') { exit 32 }
-Write-Output "literal=`$env:$literalName required=`$env:$requiredName"
+    @'
+if ($env:SANRO_CI_LITERAL_TEST_VALUE -ne 'literal-secret-test-value') { exit 31 }
+if ($env:SANRO_CI_REQUIRED_TEST_VALUE -ne 'required-secret-test-value') { exit 32 }
+Write-Output "literal=$env:SANRO_CI_LITERAL_TEST_VALUE required=$env:SANRO_CI_REQUIRED_TEST_VALUE"
 exit 0
-"@ | Set-Content -LiteralPath $script -Encoding UTF8
+'@ | Set-Content -LiteralPath $script -Encoding UTF8
 
     $config = [pscustomobject]@{
         name = 'environment injection probe'
