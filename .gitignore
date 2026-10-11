@@ -10,6 +10,9 @@ dist/
 build/
 coverage/
 
+# SANRO local CI reports
+.sanro-ci/
+
 # Recovery archives
 *.zip
 SANRO-Recovery/
