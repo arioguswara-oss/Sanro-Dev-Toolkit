@@ -7,6 +7,76 @@
   "dependencyCommands": [],
   "fullTest": null,
   "focusedTest": null,
+  "ci": {
+    "reportDirectory": ".sanro-ci",
+    "failFast": false,
+    "dependencyPolicy": {
+      "installMode": "explicit-only",
+      "allowCiInstall": false
+    },
+    "pipeline": ["check"],
+    "stages": {
+      "check": {
+        "enabled": true,
+        "required": true,
+        "builtin": "fast-check"
+      },
+      "lint": {
+        "enabled": false,
+        "required": false,
+        "workingDirectory": ".",
+        "command": "php",
+        "args": ["-v"]
+      },
+      "unit": {
+        "enabled": false,
+        "required": false,
+        "workingDirectory": ".",
+        "command": "phpunit",
+        "args": []
+      },
+      "integration": {
+        "enabled": false,
+        "required": false,
+        "workingDirectory": ".",
+        "command": "phpunit",
+        "args": ["--testsuite", "integration"]
+      },
+      "build": {
+        "enabled": false,
+        "required": false,
+        "workingDirectory": ".",
+        "command": "npm",
+        "args": ["run", "build"]
+      },
+      "verify": {
+        "enabled": false,
+        "required": false,
+        "workingDirectory": ".",
+        "command": "php",
+        "args": ["-v"]
+      }
+    },
+    "artifactOutputs": [],
+    "releaseValidation": {
+      "requireCleanWorkingTree": true,
+      "requireArtifacts": false,
+      "enforceProductionApproval": true
+    },
+    "healthCheck": {
+      "mode": "project-defined",
+      "command": null
+    },
+    "deploymentPolicy": {
+      "productionApprovalRequired": true,
+      "autoDeploy": false
+    },
+    "rollbackPolicy": {
+      "approvalRequired": true,
+      "mode": "project-defined",
+      "command": null
+    }
+  },
   "handoff": {
     "agentsFile": "AGENTS.md",
     "workboard": "",
