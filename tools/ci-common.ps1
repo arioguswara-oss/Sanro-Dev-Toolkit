@@ -110,6 +110,16 @@ function Invoke-SanroCiConfiguredCommand {
     }
 }
 
+function Get-SanroPowerShellCommand {
+    $pwsh = Get-Command 'pwsh' -ErrorAction SilentlyContinue
+    if ($null -ne $pwsh) { return $pwsh.Source }
+
+    $windowsPowerShell = Get-Command 'powershell' -ErrorAction SilentlyContinue
+    if ($null -ne $windowsPowerShell) { return $windowsPowerShell.Source }
+
+    throw 'No PowerShell executable is available for isolated Toolkit child execution.'
+}
+
 function Invoke-SanroCiFastCheck {
     param(
         [string]$ProjectRoot,
@@ -118,11 +128,12 @@ function Invoke-SanroCiFastCheck {
     )
 
     $script = Join-Path $ToolsRoot 'check.ps1'
+    $shell = Get-SanroPowerShellCommand
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $output = @()
     $exitCode = 1
     try {
-        $output = @(& $script -ProjectRoot $ProjectRoot 2>&1 | ForEach-Object { [string]$_ })
+        $output = @(& $shell -NoLogo -NoProfile -File $script -ProjectRoot $ProjectRoot 2>&1 | ForEach-Object { [string]$_ })
         $exitCode = $LASTEXITCODE
         if ($null -eq $exitCode) { $exitCode = if ($?) { 0 } else { 1 } }
     }
@@ -154,7 +165,9 @@ function Invoke-SanroCiFastCheck {
 
 function Get-SanroCiStageDefinition($CiConfig, [string]$StageName) {
     if ($null -eq $CiConfig.stages) { return $null }
-    return $CiConfig.stages.PSObject.Properties[$StageName].Value
+    $property = $CiConfig.stages.PSObject.Properties[$StageName]
+    if ($null -eq $property) { return $null }
+    return $property.Value
 }
 
 function Get-SanroCiArtifactState([string]$ProjectRoot, $CiConfig) {
