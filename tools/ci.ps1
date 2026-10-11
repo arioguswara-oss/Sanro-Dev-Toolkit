@@ -9,6 +9,45 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
 . (Join-Path $PSScriptRoot 'ci-common.ps1')
 
+function New-SanroCiEffectiveCommand($Stage, $CommandConfig) {
+    $merged = [ordered]@{}
+    foreach ($property in $CommandConfig.PSObject.Properties) {
+        $merged[[string]$property.Name] = $property.Value
+    }
+
+    if ((-not $merged.Contains('workingDirectory')) -and -not [string]::IsNullOrWhiteSpace([string]$Stage.workingDirectory)) {
+        $merged['workingDirectory'] = [string]$Stage.workingDirectory
+    }
+
+    $environment = [ordered]@{}
+    if ($null -ne $Stage.environment) {
+        foreach ($property in $Stage.environment.PSObject.Properties) {
+            $environment[[string]$property.Name] = $property.Value
+        }
+    }
+    if ($null -ne $CommandConfig.environment) {
+        foreach ($property in $CommandConfig.environment.PSObject.Properties) {
+            $environment[[string]$property.Name] = $property.Value
+        }
+    }
+    if ($environment.Count -gt 0) {
+        $merged['environment'] = [pscustomobject]$environment
+    }
+
+    $required = @()
+    foreach ($name in @($Stage.requiredEnvironment) + @($CommandConfig.requiredEnvironment)) {
+        $text = [string]$name
+        if (-not [string]::IsNullOrWhiteSpace($text) -and $required -notcontains $text) {
+            $required += $text
+        }
+    }
+    if ($required.Count -gt 0) {
+        $merged['requiredEnvironment'] = @($required)
+    }
+
+    return [pscustomobject]$merged
+}
+
 $state = Get-SanroProjectConfig $ProjectRoot
 $root = $state.Root
 $config = $state.Config
@@ -90,7 +129,8 @@ foreach ($stageName in $pipeline) {
     }
     elseif ($null -ne $stage.commands) {
         foreach ($commandConfig in @($stage.commands)) {
-            $steps += Invoke-SanroCiConfiguredCommand -ProjectRoot $root -CommandConfig $commandConfig -Quiet:$quiet
+            $effectiveCommand = New-SanroCiEffectiveCommand $stage $commandConfig
+            $steps += Invoke-SanroCiConfiguredCommand -ProjectRoot $root -CommandConfig $effectiveCommand -Quiet:$quiet
             if ($steps[-1].status -ne 'PASS' -and [bool]$ci.failFast) { break }
         }
     }
