@@ -23,13 +23,90 @@ function Get-SanroCiGitState([string]$ProjectRoot) {
     finally { Pop-Location }
 }
 
+function Test-SanroCiEnvironmentName([string]$Name) {
+    return $Name -match '^[A-Za-z_][A-Za-z0-9_]*$'
+}
+
+function Get-SanroCiEnvironmentMetadata($CommandConfig) {
+    $literalKeys = @()
+    if ($null -ne $CommandConfig.environment) {
+        $literalKeys = @($CommandConfig.environment.PSObject.Properties | ForEach-Object { [string]$_.Name })
+    }
+    $required = @($CommandConfig.requiredEnvironment | ForEach-Object { [string]$_ } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    return [ordered]@{
+        environmentKeys = @($literalKeys)
+        requiredEnvironment = @($required)
+    }
+}
+
+function Get-SanroCiEnvironmentPlan($CommandConfig) {
+    $literal = [ordered]@{}
+    $required = @()
+    $missing = @()
+    $sensitiveValues = @()
+
+    if ($null -ne $CommandConfig.environment) {
+        foreach ($property in $CommandConfig.environment.PSObject.Properties) {
+            $name = [string]$property.Name
+            if (-not (Test-SanroCiEnvironmentName $name)) {
+                throw "Invalid environment variable name in CI manifest: $name"
+            }
+            $value = $property.Value
+            if ($value -is [System.Array] -or $value -is [System.Management.Automation.PSCustomObject]) {
+                throw "CI environment value must be scalar: $name"
+            }
+            $text = if ($null -eq $value) { '' } else { [string]$value }
+            $literal[$name] = $text
+            if ($text.Length -ge 4) { $sensitiveValues += $text }
+        }
+    }
+
+    foreach ($raw in @($CommandConfig.requiredEnvironment)) {
+        $name = [string]$raw
+        if ([string]::IsNullOrWhiteSpace($name)) { continue }
+        if (-not (Test-SanroCiEnvironmentName $name)) {
+            throw "Invalid required environment variable name in CI manifest: $name"
+        }
+        $required += $name
+        $value = [Environment]::GetEnvironmentVariable($name, 'Process')
+        if ([string]::IsNullOrWhiteSpace($value)) {
+            $missing += $name
+        }
+        elseif ($value.Length -ge 4) {
+            $sensitiveValues += $value
+        }
+    }
+
+    return [ordered]@{
+        literal = $literal
+        required = @($required)
+        missing = @($missing)
+        sensitiveValues = @($sensitiveValues | Select-Object -Unique)
+    }
+}
+
+function Protect-SanroCiText([string]$Text, $SensitiveValues = @()) {
+    $safe = [string]$Text
+    foreach ($value in @($SensitiveValues)) {
+        $secret = [string]$value
+        if ($secret.Length -ge 4) {
+            $safe = $safe.Replace($secret, '[REDACTED_ENV]')
+        }
+    }
+    $safe = $safe -replace '(?i)((?:password|passwd|pwd|token|secret|credential|api[_-]?key)\s*[:=]\s*)([^\s,;]+)', '$1[REDACTED]'
+    return $safe
+}
+
 function ConvertTo-SanroCiCommandSummary($CommandConfig) {
     $args = @($CommandConfig.args | ForEach-Object { [string]$_ })
+    $environment = Get-SanroCiEnvironmentMetadata $CommandConfig
     return [ordered]@{
         name = [string]$CommandConfig.name
         workingDirectory = if ([string]::IsNullOrWhiteSpace([string]$CommandConfig.workingDirectory)) { '.' } else { [string]$CommandConfig.workingDirectory }
         command = [string]$CommandConfig.command
         args = $args
+        environmentKeys = @($environment.environmentKeys)
+        requiredEnvironment = @($environment.requiredEnvironment)
     }
 }
 
@@ -40,6 +117,30 @@ function Invoke-SanroCiConfiguredCommand {
         [switch]$Quiet
     )
 
+    $summary = ConvertTo-SanroCiCommandSummary $CommandConfig
+    try {
+        $environmentPlan = Get-SanroCiEnvironmentPlan $CommandConfig
+    }
+    catch {
+        return [ordered]@{
+            status = 'BLOCKED'
+            exitCode = 2
+            durationMs = 0
+            command = $summary
+            logTail = @((Protect-SanroCiText ([string]$_)))
+        }
+    }
+
+    if ($environmentPlan.missing.Count -gt 0) {
+        return [ordered]@{
+            status = 'BLOCKED'
+            exitCode = 2
+            durationMs = 0
+            command = $summary
+            logTail = @("Missing required CI environment variables: $($environmentPlan.missing -join ', ')")
+        }
+    }
+
     $working = [string]$CommandConfig.workingDirectory
     if ([string]::IsNullOrWhiteSpace($working)) { $working = '.' }
     $workDir = Join-Path $ProjectRoot $working
@@ -48,7 +149,7 @@ function Invoke-SanroCiConfiguredCommand {
             status = 'BLOCKED'
             exitCode = 2
             durationMs = 0
-            command = ConvertTo-SanroCiCommandSummary $CommandConfig
+            command = $summary
             logTail = @("Configured working directory not found: $working")
         }
     }
@@ -59,7 +160,7 @@ function Invoke-SanroCiConfiguredCommand {
             status = 'BLOCKED'
             exitCode = 2
             durationMs = 0
-            command = ConvertTo-SanroCiCommandSummary $CommandConfig
+            command = $summary
             logTail = @('Configured command name is empty.')
         }
     }
@@ -70,7 +171,7 @@ function Invoke-SanroCiConfiguredCommand {
             status = 'BLOCKED'
             exitCode = 2
             durationMs = 0
-            command = ConvertTo-SanroCiCommandSummary $CommandConfig
+            command = $summary
             logTail = @("Configured command unavailable on $(Get-SanroPlatform): $configuredCommand (resolved: $command)")
         }
     }
@@ -79,6 +180,15 @@ function Invoke-SanroCiConfiguredCommand {
     $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $output = @()
     $exitCode = 1
+    $originalEnvironment = @{}
+    $hadOriginalEnvironment = @{}
+
+    foreach ($key in $environmentPlan.literal.Keys) {
+        $existing = [Environment]::GetEnvironmentVariable($key, 'Process')
+        $hadOriginalEnvironment[$key] = ($null -ne $existing)
+        $originalEnvironment[$key] = $existing
+        [Environment]::SetEnvironmentVariable($key, [string]$environmentPlan.literal[$key], 'Process')
+    }
 
     Push-Location $workDir
     try {
@@ -92,20 +202,29 @@ function Invoke-SanroCiConfiguredCommand {
     }
     finally {
         Pop-Location
+        foreach ($key in $environmentPlan.literal.Keys) {
+            if ($hadOriginalEnvironment[$key]) {
+                [Environment]::SetEnvironmentVariable($key, [string]$originalEnvironment[$key], 'Process')
+            }
+            else {
+                [Environment]::SetEnvironmentVariable($key, $null, 'Process')
+            }
+        }
         $stopwatch.Stop()
     }
 
+    $safeOutput = @($output | ForEach-Object { Protect-SanroCiText ([string]$_) $environmentPlan.sensitiveValues })
     if (-not $Quiet) {
-        foreach ($line in $output) { Write-Host $line }
+        foreach ($line in $safeOutput) { Write-Host $line }
     }
 
-    $tailCount = [Math]::Min(40, $output.Count)
-    $tail = if ($tailCount -gt 0) { @($output | Select-Object -Last $tailCount) } else { @() }
+    $tailCount = [Math]::Min(40, $safeOutput.Count)
+    $tail = if ($tailCount -gt 0) { @($safeOutput | Select-Object -Last $tailCount) } else { @() }
     return [ordered]@{
         status = if ([int]$exitCode -eq 0) { 'PASS' } else { 'FAIL' }
         exitCode = [int]$exitCode
         durationMs = [int64]$stopwatch.ElapsedMilliseconds
-        command = ConvertTo-SanroCiCommandSummary $CommandConfig
+        command = $summary
         logTail = $tail
     }
 }
@@ -158,6 +277,8 @@ function Invoke-SanroCiFastCheck {
             workingDirectory = '.'
             command = 'builtin:fast-check'
             args = @()
+            environmentKeys = @()
+            requiredEnvironment = @()
         }
         logTail = $tail
     }
