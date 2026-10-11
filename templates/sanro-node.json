@@ -23,6 +23,83 @@
     "command": "node",
     "args": ["--test", "test/{filter}*.test.js"]
   },
+  "ci": {
+    "reportDirectory": ".sanro-ci",
+    "failFast": false,
+    "dependencyPolicy": {
+      "installMode": "explicit-only",
+      "allowCiInstall": false,
+      "note": "CI validates the existing workspace. Dependency installation remains an explicit bootstrap/development action."
+    },
+    "pipeline": ["check", "unit"],
+    "stages": {
+      "check": {
+        "enabled": true,
+        "required": true,
+        "builtin": "fast-check"
+      },
+      "lint": {
+        "enabled": false,
+        "required": false,
+        "workingDirectory": ".",
+        "command": "npm",
+        "args": ["run", "lint"]
+      },
+      "unit": {
+        "enabled": true,
+        "required": true,
+        "workingDirectory": ".",
+        "command": "npm",
+        "args": ["test"]
+      },
+      "integration": {
+        "enabled": false,
+        "required": false,
+        "workingDirectory": ".",
+        "command": "npm",
+        "args": ["run", "test:integration"]
+      },
+      "build": {
+        "enabled": false,
+        "required": false,
+        "workingDirectory": ".",
+        "command": "npm",
+        "args": ["run", "build"]
+      },
+      "verify": {
+        "enabled": false,
+        "required": false,
+        "workingDirectory": ".",
+        "command": "npm",
+        "args": ["run", "verify"]
+      }
+    },
+    "artifactOutputs": [
+      {
+        "path": "dist",
+        "required": false
+      }
+    ],
+    "releaseValidation": {
+      "requireCleanWorkingTree": true,
+      "requireArtifacts": false,
+      "enforceProductionApproval": true
+    },
+    "healthCheck": {
+      "mode": "project-defined",
+      "command": null,
+      "note": "Health checks may be configured per repository but are never treated as deployment approval."
+    },
+    "deploymentPolicy": {
+      "productionApprovalRequired": true,
+      "autoDeploy": false
+    },
+    "rollbackPolicy": {
+      "approvalRequired": true,
+      "mode": "project-defined",
+      "command": null
+    }
+  },
   "handoff": {
     "agentsFile": "AGENTS.md",
     "workboard": "",
