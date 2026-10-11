@@ -10,6 +10,11 @@
   "ci": {
     "reportDirectory": ".sanro-ci",
     "failFast": false,
+    "readiness": {
+      "core": {
+        "requiredCommands": ["git", "rg", "pwsh", "bash"]
+      }
+    },
     "dependencyPolicy": {
       "installMode": "explicit-only",
       "allowCiInstall": false
