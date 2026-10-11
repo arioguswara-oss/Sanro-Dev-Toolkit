@@ -28,13 +28,15 @@ A command may declare literal non-secret test values with `environment` and requ
 
 Use `environment` only for non-secret deterministic test configuration. Secret or environment-specific values must be supplied by the process/VPS environment and referenced only by name in `requiredEnvironment`.
 
+For a multi-command stage, stage-level `workingDirectory`, `environment`, and `requiredEnvironment` are inherited by its commands. A command may override literal environment keys and may add more required environment names.
+
 ## Fail-closed behavior
 
 - Invalid environment variable names block the command.
 - Array/object environment values are rejected; literal values must be scalar.
 - A missing or empty required environment variable returns `BLOCKED` with exit code `2`.
 - CI does not invent defaults for missing database credentials or endpoints.
-- Literal environment overrides exist only for the child command execution and are restored afterward.
+- Literal environment overrides exist only for child-command execution and are restored afterward.
 
 ## Reporting and redaction
 
@@ -47,7 +49,11 @@ requiredEnvironment
 
 They never include environment values.
 
-Captured output is scrubbed before it is printed or persisted in `logTail`. Exact injected/required environment values of four or more characters are replaced with `[REDACTED_ENV]`. Common credential-shaped `password=`, `token=`, `secret=`, `credential=`, and `api_key=` output is also redacted.
+All values sourced through `requiredEnvironment` are treated as sensitive and are removed from captured output before it is printed or persisted in `logTail`.
+
+Literal `environment` values are expected to be non-secret. As defense in depth, values whose variable names are credential-shaped (for example `*_PASSWORD`, `*_TOKEN`, `*_SECRET`, `*_CREDENTIAL`, `*_API_KEY`, `*_PRIVATE_KEY`, or `*_CONTROL_PLANE_KEY`) are also replaced with `[REDACTED_ENV]` when captured in command output.
+
+Common credential-shaped textual output such as `password=`, `token=`, `secret=`, `credential=`, and `api_key=` is additionally redacted.
 
 This is defense in depth, not permission to print secrets from test code. Test commands should still avoid echoing credentials.
 
