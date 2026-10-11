@@ -14,6 +14,7 @@ $root = $state.Root
 $config = $state.Config
 $ci = Get-SanroCiConfig $config
 $quiet = [bool]$Json
+$directMode = $Mode -in @('lint','unit','integration','build','verify')
 
 $pipeline = switch ($Mode) {
     'lint' { @('lint') }
@@ -61,19 +62,22 @@ foreach ($stageName in $pipeline) {
     }
 
     $enabled = if ($null -eq $stage.enabled) { $true } else { [bool]$stage.enabled }
-    $required = if ($null -eq $stage.required) { $true } else { [bool]$stage.required }
+    $manifestRequired = if ($null -eq $stage.required) { $true } else { [bool]$stage.required }
+    $effectiveRequired = $manifestRequired -or $directMode
 
     if (-not $enabled) {
+        $disabledStatus = if ($effectiveRequired) { 'BLOCKED' } else { 'SKIP' }
         $stageResults += [ordered]@{
             name = $stageName
-            required = $required
-            status = 'SKIP'
-            exitCode = 0
+            required = $effectiveRequired
+            status = $disabledStatus
+            exitCode = if ($disabledStatus -eq 'BLOCKED') { 2 } else { 0 }
             durationMs = 0
             steps = @()
             logTail = @('Stage disabled by project manifest.')
         }
-        if (-not $quiet) { Write-Host ("[SKIP] {0}" -f $stageName) }
+        if ($effectiveRequired) { $hasRequiredBlocked = $true }
+        if (-not $quiet) { Write-Host ("[{0}] {1}" -f $disabledStatus, $stageName) }
         continue
     }
 
@@ -112,7 +116,7 @@ foreach ($stageName in $pipeline) {
 
     $stageResults += [ordered]@{
         name = $stageName
-        required = $required
+        required = $effectiveRequired
         status = $stageStatus
         exitCode = $stageExit
         durationMs = [int64]$stageWatch.ElapsedMilliseconds
@@ -120,11 +124,11 @@ foreach ($stageName in $pipeline) {
         logTail = $tail
     }
 
-    if ($required -and $stageStatus -eq 'BLOCKED') { $hasRequiredBlocked = $true }
-    if ($required -and $stageStatus -eq 'FAIL') { $hasRequiredFailure = $true }
+    if ($effectiveRequired -and $stageStatus -eq 'BLOCKED') { $hasRequiredBlocked = $true }
+    if ($effectiveRequired -and $stageStatus -eq 'FAIL') { $hasRequiredFailure = $true }
 
     if (-not $quiet) { Write-Host ("[{0}] {1}" -f $stageStatus, $stageName) }
-    if ([bool]$ci.failFast -and $required -and $stageStatus -ne 'PASS') { break }
+    if ([bool]$ci.failFast -and $effectiveRequired -and $stageStatus -ne 'PASS') { break }
 }
 
 $releaseChecks = @()
