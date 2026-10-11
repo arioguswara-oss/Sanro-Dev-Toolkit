@@ -7,7 +7,7 @@ $temp = Join-Path ([System.IO.Path]::GetTempPath()) ("sanro-ci-env-{0}" -f ([gui
 New-Item -ItemType Directory -Force -Path $temp | Out-Null
 
 $requiredName = 'SANRO_CI_REQUIRED_TEST_VALUE'
-$literalName = 'SANRO_CI_LITERAL_TEST_VALUE'
+$literalName = 'SANRO_CI_TEST_SECRET'
 $requiredValue = 'required-secret-test-value'
 $literalValue = 'literal-secret-test-value'
 $originalRequired = [Environment]::GetEnvironmentVariable($requiredName, 'Process')
@@ -19,9 +19,9 @@ try {
 
     $script = Join-Path $temp 'probe.ps1'
     @'
-if ($env:SANRO_CI_LITERAL_TEST_VALUE -ne 'literal-secret-test-value') { exit 31 }
+if ($env:SANRO_CI_TEST_SECRET -ne 'literal-secret-test-value') { exit 31 }
 if ($env:SANRO_CI_REQUIRED_TEST_VALUE -ne 'required-secret-test-value') { exit 32 }
-Write-Output "literal=$env:SANRO_CI_LITERAL_TEST_VALUE required=$env:SANRO_CI_REQUIRED_TEST_VALUE"
+Write-Output "secret=$env:SANRO_CI_TEST_SECRET required=$env:SANRO_CI_REQUIRED_TEST_VALUE"
 exit 0
 '@ | Set-Content -LiteralPath $script -Encoding UTF8
 
@@ -31,7 +31,8 @@ exit 0
         command = 'pwsh'
         args = @('-NoLogo', '-NoProfile', '-File', $script)
         environment = [pscustomobject]@{
-            SANRO_CI_LITERAL_TEST_VALUE = $literalValue
+            SANRO_CI_TEST_SECRET = $literalValue
+            SANRO_CI_NON_SECRET_MODE = 'test-mode'
         }
         requiredEnvironment = @($requiredName)
     }
@@ -48,7 +49,7 @@ exit 0
     }
     $joined = @($result.logTail) -join "`n"
     if ($joined.Contains($literalValue) -or $joined.Contains($requiredValue)) {
-        throw 'Environment value leaked into CI log tail.'
+        throw 'Sensitive environment value leaked into CI log tail.'
     }
     if (-not $joined.Contains('[REDACTED_ENV]')) {
         throw 'Expected environment redaction marker was not present.'
