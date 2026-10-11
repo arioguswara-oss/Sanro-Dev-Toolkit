@@ -8,6 +8,46 @@
   "dependencyCommands": [],
   "fullTest": null,
   "focusedTest": null,
+  "ci": {
+    "reportDirectory": ".sanro-ci",
+    "failFast": false,
+    "readiness": {
+      "core": {
+        "requiredCommands": ["git", "rg", "pwsh", "bash"]
+      }
+    },
+    "dependencyPolicy": {
+      "installMode": "explicit-only",
+      "allowCiInstall": false
+    },
+    "pipeline": ["check"],
+    "stages": {
+      "check": {
+        "enabled": true,
+        "required": true,
+        "builtin": "fast-check"
+      }
+    },
+    "artifactOutputs": [],
+    "releaseValidation": {
+      "requireCleanWorkingTree": true,
+      "requireArtifacts": false,
+      "enforceProductionApproval": true
+    },
+    "healthCheck": {
+      "mode": "project-defined",
+      "command": null
+    },
+    "deploymentPolicy": {
+      "productionApprovalRequired": true,
+      "autoDeploy": false
+    },
+    "rollbackPolicy": {
+      "approvalRequired": true,
+      "mode": "project-defined",
+      "command": null
+    }
+  },
   "security": {
     "includeSecretsInRecoveryArchive": false
   }

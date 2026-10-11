@@ -103,6 +103,10 @@ jobs:
           Write-Host 'CONFIGURED_COMMAND_EXECUTION_OK'
           exit 0
 
+      - name: Validate CI environment injection and redaction
+        shell: pwsh
+        run: ./tests/ci-environment.ps1
+
       - name: Ubuntu launcher and host check
         if: runner.os == 'Linux'
         shell: bash
